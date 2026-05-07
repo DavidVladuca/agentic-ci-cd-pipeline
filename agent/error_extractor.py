@@ -50,6 +50,43 @@ class ErrorExtractor:
         return normalized
 
     @staticmethod
+    # cluster errors so that small changes dont make it seem like a new error
+    def fingerprint_error(error_summary, error_type):
+        normalized = ErrorExtractor.normalize_error(error_summary)
+
+        if error_type == "COMPILATION_ERROR":
+            if "illegal start of expression" in normalized:
+                return "COMPILATION_ERROR:illegal start of expression"
+
+            if "cannot find symbol" in normalized:
+                return "COMPILATION_ERROR:cannot find symbol"
+
+            if "package does not exist" in normalized:
+                return "COMPILATION_ERROR:package does not exist"
+
+            if "reached end of file while parsing" in normalized:
+                return "COMPILATION_ERROR:reached end of file while parsing"
+
+            return "COMPILATION_ERROR"
+
+        if error_type == "TEST_FAILURE":
+            if "expected:" in normalized and "but was:" in normalized:
+                return "TEST_FAILURE:assertion mismatch"
+
+            return "TEST_FAILURE"
+
+        if error_type == "DEPENDENCY_RESOLUTION_ERROR":
+            return "DEPENDENCY_RESOLUTION_ERROR"
+
+        if error_type == "TIMEOUT":
+            return "TIMEOUT"
+
+        if error_type == "LLM_ERROR":
+            return "LLM_ERROR"
+
+        return normalized
+
+    @staticmethod
     def classify_error(error_summary, timed_out=False):
         if timed_out:
             return "TIMEOUT"
@@ -88,6 +125,15 @@ class ErrorExtractor:
             or "failures:" in lowered
         ):
             return "TEST_FAILURE"
+        
+        if (
+            "could not transfer artifact" in lowered
+            or "could not be resolved" in lowered
+            or "failed to collect dependencies" in lowered
+            or "unknown host" in lowered
+            or "temporary failure in name resolution" in lowered
+        ):
+            return "DEPENDENCY_RESOLUTION_ERROR"
 
         if "timed out" in lowered:
             return "TIMEOUT"

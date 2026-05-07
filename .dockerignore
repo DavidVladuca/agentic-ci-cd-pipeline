@@ -1,0 +1,12 @@
+.git
+.github
+target
+logs
+.sandbox
+__pycache__
+*.class
+*.log
+.venv
+venv
+.idea
+.vscode

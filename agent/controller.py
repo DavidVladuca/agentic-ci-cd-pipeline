@@ -3,14 +3,15 @@ import time
 
 from agent.llm_client import LLMClient
 from agent.workspace import WorkspaceManager
-from agent.maven_runner import MavenRunner
+from agent.docker_runner import DockerRunner
 from agent.error_extractor import ErrorExtractor
 from agent.logger_config import setup_logger
 from agent.run_metrics import RunMetrics
+from agent.sandbox_manager import SandboxManager
 
 # This is the controller
-# LLMClient → WorkspaceManager → MavenRunner → ErrorExtractor → Logger → RunMetrics
-# At this stage : it runs a retry feedback loop with logging and metrics
+# LLMClient → SandboxManager → WorkspaceManager → DockerRunner → ErrorExtractor → Logger → RunMetrics
+# At this stage : it runs a retry feedback loop with logging, metrics and Docker sandboxing
 def main():
     # __file__ = path of current file (controller.py),  resolve() = absolute path
     project_root = Path(__file__).resolve().parents[1]
@@ -36,14 +37,19 @@ def main():
         max_attempts=max_attempts
     )
 
-    logger.info("[CONTROLLER] Starting Phase 3 stability/observability run")
+    logger.info("[CONTROLLER] Starting Phase 4 Docker sandboxing run")
     logger.info("[CONTROLLER] Project root: %s", project_root)
     logger.info("[CONTROLLER] Max attempts: %s", max_attempts)
     logger.info("[CONTROLLER] Log file: %s", log_file)
 
     llm = LLMClient(model="agent-coder")
-    workspace = WorkspaceManager(project_root)
-    maven = MavenRunner(project_root, timeout_seconds=15)
+    sandbox = SandboxManager(project_root)
+    sandbox_root = sandbox.prepare()
+    workspace = WorkspaceManager(sandbox_root)
+    runner = DockerRunner(sandbox_root, image_name="agent-pipeline-java", timeout_seconds=30)
+
+    logger.info("[CONTROLLER] Sandbox root: %s", sandbox_root)
+    logger.info("[CONTROLLER] Docker image: agent-pipeline-java")
 
     for attempt in range(1, max_attempts + 1):
         attempt_start = time.perf_counter()
@@ -81,12 +87,12 @@ def main():
             llm_seconds = time.perf_counter() - llm_start
             logger.info("[TIMING] LLM generation took %.3f seconds", llm_seconds)
 
-        # this is for catching errors before Maven runs!!!
+        # this is for catching errors before Docker/Maven runs!!!
         except RuntimeError as e:
             llm_seconds = time.perf_counter() - attempt_start
 
-            error_summary = f"LLM generation failed before Maven could run:\n{e}"
-            normalized_error = ErrorExtractor.normalize_error(error_summary)
+            error_summary = f"LLM generation failed before Docker/Maven could run:\n{e}"
+            normalized_error = ErrorExtractor.fingerprint_error(error_summary, error_type)
             error_type = ErrorExtractor.classify_error(error_summary)
 
             logger.error("[CONTROLLER] LLM FAILURE")
@@ -137,7 +143,7 @@ def main():
 
             continue
 
-        logger.info("[CONTROLLER] Writing generated Java files...")
+        logger.info("[CONTROLLER] Writing generated Java files into sandbox...")
         workspace_start = time.perf_counter()
 
         workspace.write_java_files(
@@ -148,12 +154,12 @@ def main():
         workspace_seconds = time.perf_counter() - workspace_start
         logger.info("[TIMING] Workspace write took %.3f seconds", workspace_seconds)
 
-        logger.info("[CONTROLLER] Running Maven tests...")
-        result = maven.run_tests()
+        logger.info("[CONTROLLER] Running Maven tests inside Docker...")
+        result = runner.run_tests()
 
         maven_seconds = result.duration_seconds
-        logger.info("[TIMING] Maven run took %.3f seconds", maven_seconds)
-        logger.info("[CONTROLLER] Maven exit code: %s", result.exit_code)
+        logger.info("[TIMING] Docker/Maven run took %.3f seconds", maven_seconds)
+        logger.info("[CONTROLLER] Docker/Maven exit code: %s", result.exit_code)
 
         attempt_seconds = time.perf_counter() - attempt_start
 
@@ -195,16 +201,16 @@ def main():
             timed_out=result.timed_out
         )
 
-        logger.error("[CONTROLLER] Extracted Maven failure:")
+        logger.error("[CONTROLLER] Extracted Docker/Maven failure:")
         logger.error(error_summary)
         logger.info("[CONTROLLER] Error type: %s", error_type)
         logger.info("[TIMING] Attempt took %.3f seconds", attempt_seconds)
 
-        normalized_error = ErrorExtractor.normalize_error(error_summary)
+        normalized_error = ErrorExtractor.fingerprint_error(error_summary, error_type)
 
         # got same error again, we are stuck
         if normalized_error in seen_errors:
-            logger.error("[CONTROLLER] Repeated Maven error detected. Stopping.")
+            logger.error("[CONTROLLER] Repeated Docker/Maven error detected. Stopping.")
 
             metrics.add_attempt(
                 attempt=attempt,
