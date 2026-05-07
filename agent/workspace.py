@@ -1,9 +1,7 @@
 from pathlib import Path
 import shutil
 
-# The model may generate different code every time.
-# If you do not wipe the folders first, old files can remain and create fake errors.
-# That would make the agent debug the wrong problem.
+# the model may generate different code every time -> wipe old files before writing new ones
 class WorkspaceManager:
     def __init__(self, project_root):
         self.project_root = Path(project_root)

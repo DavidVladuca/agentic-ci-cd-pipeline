@@ -2,25 +2,22 @@ import json
 import urllib.request
 import urllib.error
 
-# This file is the LLM communication layer of your project.
-# It does not compile Java.
-# It does not write files.
-# It does not run Maven.
-# That separation matters because when something breaks, you can tell exactly where it broke.
-# It has one responsibility:
-# Send a task/error feedback to Ollama, force the model to return JSON, parse that JSON, validate it, and return clean Java code strings.  # modified
+# this is the LLM communication layer
+# doesnt write files, run maven or log
+# has only one responsability: 
+# send a task/error feedback to Ollama, force the model to return JSON, parse + validate, and return clean Java code strings
 class LLMClient:
     def __init__(self, model="agent-coder", url="http://localhost:11434/api/generate"):
         self.model = model
         self.url = url
 
-    def generate_code(self, task_prompt, previous_error=None):  
+    def generate_code(self, task_prompt, previous_error=None):
         # if no error -> normal prompt
         # if error -> repair prompt with error details
-        if previous_error is None:  
-            prompt = self.build_initial_prompt(task_prompt)  
-        else:  
-            prompt = self.build_repair_prompt(task_prompt, previous_error)  
+        if previous_error is None:
+            prompt = self.build_initial_prompt(task_prompt)
+        else:
+            prompt = self.build_repair_prompt(task_prompt, previous_error)
 
         payload = {
             "model": self.model,
@@ -67,7 +64,7 @@ class LLMClient:
         return code_json
 
     # we add constraints before the task (to make the model reliable)
-    def build_initial_prompt(self, task_prompt):  
+    def build_initial_prompt(self, task_prompt):
         return f"""
                 You are generating Java code for a Maven project.
 
@@ -78,7 +75,7 @@ class LLMClient:
                 """.strip()
 
     # if Maven fails, we get here, and we fix based on error
-    def build_repair_prompt(self, task_prompt, previous_error):  
+    def build_repair_prompt(self, task_prompt, previous_error):
         return f"""
                 The previous generated Java code failed when Maven ran the tests.
 
@@ -94,7 +91,7 @@ class LLMClient:
                 """.strip()
 
     # these are some shared rules (in both cases they must be respected)
-    def common_rules(self):  
+    def common_rules(self):
         return """
                 Return only a raw JSON object.
 

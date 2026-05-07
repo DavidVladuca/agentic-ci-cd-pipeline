@@ -1,3 +1,4 @@
+# this class extracts errors and useful info, classifies and normalizes them
 class ErrorExtractor:
     @staticmethod
     def extract_errors(raw_output, timed_out=False):
@@ -18,6 +19,7 @@ class ErrorExtractor:
 
             if stripped.startswith("[INFO]"):
                 continue
+
             # we want to know more than just errors
             useful_lines.append(stripped)
 
@@ -36,8 +38,8 @@ class ErrorExtractor:
 
         summary = "\n".join(selected_lines)
 
-        if not summary:  # new
-            summary = "No Maven output captured."  # new
+        if not summary:
+            summary = "No Maven output captured."
 
         return prefix + summary
 
@@ -46,6 +48,54 @@ class ErrorExtractor:
         normalized = error_summary.lower()
         normalized = " ".join(normalized.split())
         return normalized
+
+    @staticmethod
+    def classify_error(error_summary, timed_out=False):
+        if timed_out:
+            return "TIMEOUT"
+
+        if error_summary is None:
+            return "UNKNOWN_ERROR"
+
+        lowered = error_summary.lower()
+
+        if (
+            "llm generation failed" in lowered
+            or "failed to call ollama api" in lowered
+            or "ollama returned invalid outer json" in lowered
+            or "model response was not valid json" in lowered
+            or "model json must contain exactly" in lowered
+            or "model output must be a json object" in lowered
+        ):
+            return "LLM_ERROR"
+
+        if (
+            "compilation error" in lowered
+            or "compilation failure" in lowered
+            or "cannot find symbol" in lowered
+            or "package does not exist" in lowered
+            or "class, interface, enum, or record expected" in lowered
+            or "illegal start of expression" in lowered
+            or "reached end of file while parsing" in lowered
+        ):
+            return "COMPILATION_ERROR"
+
+        if (
+            "assertionfailederror" in lowered
+            or ("expected:" in lowered and "but was:" in lowered)
+            or "there are test failures" in lowered
+            or "test failures" in lowered
+            or "failures:" in lowered
+        ):
+            return "TEST_FAILURE"
+
+        if "timed out" in lowered:
+            return "TIMEOUT"
+
+        if "build failure" in lowered:
+            return "BUILD_FAILURE"
+
+        return "UNKNOWN_ERROR"
 
 
 if __name__ == "__main__":
@@ -66,3 +116,6 @@ if __name__ == "__main__":
 
     print("----- NORMALIZED ERROR -----")
     print(ErrorExtractor.normalize_error(extracted))
+
+    print("----- ERROR TYPE -----")
+    print(ErrorExtractor.classify_error(extracted))

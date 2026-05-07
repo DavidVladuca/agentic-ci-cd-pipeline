@@ -1,15 +1,17 @@
 from pathlib import Path # just to not use string paths everywhere
 import subprocess
 import os
+import time
 
-# This isolates Maven execution.    
-# The orchestrator should not know how subprocesses work. It should only care whether Maven passed or failed.
+# isolates Maven execution   
+# controller.py should not know how subprocesses work, just if Maven passed or failed
 class MavenResult:
-    def __init__(self, exit_code, stdout, stderr, timed_out):
+    def __init__(self, exit_code, stdout, stderr, timed_out, duration_seconds=0.0):
         self.exit_code = exit_code
         self.stdout = stdout
         self.stderr = stderr
         self.timed_out = timed_out
+        self.duration_seconds = duration_seconds
 
     @property
     def success(self):
@@ -27,8 +29,14 @@ class MavenRunner:
 
     # run "mvn clean test" and return result
     def run_tests(self):
+        if os.name == "nt": # windows needs mvn.cmd, not mvn
+            command = ["mvn.cmd", "clean", "test"]
+        else:
+            command = ["mvn", "clean", "test"]
+
+        start_time = time.perf_counter()
+
         try:
-            command = ["mvn.cmd", "clean", "test"] if os.name == "nt" else ["mvn", "clean", "test"]
             completed = subprocess.run(
                 command,
                 cwd=self.project_root, # from where to run
@@ -39,29 +47,35 @@ class MavenRunner:
                 timeout=self.timeout_seconds
             )
 
+            duration_seconds = time.perf_counter() - start_time
+
             return MavenResult(
                 exit_code=completed.returncode,
                 stdout=completed.stdout,
                 stderr=completed.stderr,
-                timed_out=False
+                timed_out=False,
+                duration_seconds=duration_seconds
             )
 
         # if timeout, we get here and return exit_code -1 (not normal mvn failure, but timeout)
         except subprocess.TimeoutExpired as e:
+            duration_seconds = time.perf_counter() - start_time
+
             return MavenResult(
                 exit_code=-1,
-                stdout=self.to_text(e.stdout),  
-                stderr=self.to_text(e.stderr),  
-                timed_out=True
+                stdout=self.to_text(e.stdout),
+                stderr=self.to_text(e.stderr),
+                timed_out=True,
+                duration_seconds=duration_seconds
             )
 
     # timeout can be sometimes not a string, so we make it a text to be sure
-    @staticmethod  
-    def to_text(value):  
-        if value is None:  
-            return ""  
+    @staticmethod
+    def to_text(value):
+        if value is None:
+            return ""
 
-        if isinstance(value, bytes):  
-            return value.decode("utf-8", errors="replace")  
+        if isinstance(value, bytes):
+            return value.decode("utf-8", errors="replace")
 
-        return str(value)  
+        return str(value)
