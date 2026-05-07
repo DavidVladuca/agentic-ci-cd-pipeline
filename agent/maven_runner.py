@@ -50,7 +50,18 @@ class MavenRunner:
         except subprocess.TimeoutExpired as e:
             return MavenResult(
                 exit_code=-1,
-                stdout=e.stdout or "",
-                stderr=e.stderr or "",
+                stdout=self.to_text(e.stdout),  
+                stderr=self.to_text(e.stderr),  
                 timed_out=True
             )
+
+    # timeout can be sometimes not a string, so we make it a text to be sure
+    @staticmethod  
+    def to_text(value):  
+        if value is None:  
+            return ""  
+
+        if isinstance(value, bytes):  
+            return value.decode("utf-8", errors="replace")  
+
+        return str(value)  
