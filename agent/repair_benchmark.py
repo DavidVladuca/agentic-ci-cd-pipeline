@@ -166,6 +166,7 @@ def main(argv=None):
                     summary_file="",
                     log_file=str(log_file),
                     artifact_dir="",
+                    final_patch_file=None,
                     changed_files=[],
                     patch_files=[]
                 )

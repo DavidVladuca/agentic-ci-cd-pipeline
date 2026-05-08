@@ -20,7 +20,7 @@ class DiffTracker:
         task_dir.mkdir(parents=True, exist_ok=True)
         return task_dir
 
-    # snapshot all Java files before LLM
+    # snapshot all production Java files before the LLM edit is applied
     def snapshot_production_files(self, sandbox_root):
         sandbox_root = Path(sandbox_root)
         production_root = sandbox_root / "src" / "main" / "java"
@@ -39,7 +39,7 @@ class DiffTracker:
 
         return snapshot
 
-    # write before/after files + diff patch for one repair attempt
+    # write before/after files and a unified diff patch for one repair attempt
     def write_attempt_artifacts(self, task_name, attempt, sandbox_root, before_snapshot, changed_files):
         sandbox_root = Path(sandbox_root)
 
@@ -51,20 +51,86 @@ class DiffTracker:
         before_dir.mkdir(parents=True, exist_ok=True)
         after_dir.mkdir(parents=True, exist_ok=True)
 
-        patch_parts = []
+        patch_file = attempt_dir / f"attempt_{attempt}.patch"
+
+        after_snapshot = self.snapshot_production_files(sandbox_root)
+
+        patch_text = self.build_patch_text(
+            before_snapshot=before_snapshot,
+            after_snapshot=after_snapshot,
+            changed_files=changed_files
+        )
 
         for relative_path in sorted(changed_files):
-            after_path = sandbox_root / relative_path
-
             before_content = before_snapshot.get(relative_path, "")
-
-            if after_path.exists():
-                after_content = after_path.read_text(encoding="utf-8", errors="replace")
-            else:
-                after_content = ""
+            after_content = after_snapshot.get(relative_path, "")
 
             self.write_nested_file(before_dir, relative_path, before_content)
             self.write_nested_file(after_dir, relative_path, after_content)
+
+        patch_file.write_text(patch_text, encoding="utf-8")
+
+        return {
+            "artifact_dir": str(attempt_dir),
+            "patch_file": str(patch_file),
+            "changed_files": list(changed_files)
+        }
+
+    # write final patch artifacts from original broken code to final repaired code
+    def write_final_repair_artifacts(self, task_name, sandbox_root, initial_snapshot):
+        sandbox_root = Path(sandbox_root)
+
+        task_dir = self.prepare_task_dir(task_name)
+        before_dir = task_dir / "final_before"
+        after_dir = task_dir / "final_after"
+
+        before_dir.mkdir(parents=True, exist_ok=True)
+        after_dir.mkdir(parents=True, exist_ok=True)
+
+        final_snapshot = self.snapshot_production_files(sandbox_root)
+        changed_files = self.detect_changed_files(initial_snapshot, final_snapshot)
+
+        patch_text = self.build_patch_text(
+            before_snapshot=initial_snapshot,
+            after_snapshot=final_snapshot,
+            changed_files=changed_files
+        )
+
+        for relative_path in changed_files:
+            before_content = initial_snapshot.get(relative_path, "")
+            after_content = final_snapshot.get(relative_path, "")
+
+            self.write_nested_file(before_dir, relative_path, before_content)
+            self.write_nested_file(after_dir, relative_path, after_content)
+
+        final_patch_file = task_dir / "final_repair.patch"
+        final_patch_file.write_text(patch_text, encoding="utf-8")
+
+        return {
+            "artifact_dir": str(task_dir),
+            "final_patch_file": str(final_patch_file),
+            "changed_files": changed_files
+        }
+
+    def detect_changed_files(self, before_snapshot, after_snapshot):
+        all_paths = set(before_snapshot.keys()) | set(after_snapshot.keys())
+        changed_files = []
+
+        for relative_path in sorted(all_paths):
+            before_content = before_snapshot.get(relative_path, "")
+            after_content = after_snapshot.get(relative_path, "")
+
+            if before_content != after_content:
+                changed_files.append(relative_path)
+
+        return changed_files
+
+    def build_patch_text(self, before_snapshot, after_snapshot, changed_files):
+        patch_parts = []
+
+        for relative_path in sorted(changed_files):
+            before_content = before_snapshot.get(relative_path, "")
+            after_content = after_snapshot.get(relative_path, "")
 
             diff_lines = difflib.unified_diff(
                 before_content.splitlines(keepends=True),
@@ -79,18 +145,9 @@ class DiffTracker:
                 patch_parts.append(patch_text)
 
         if patch_parts:
-            full_patch = "\n".join(patch_parts)
-        else:
-            full_patch = "No textual changes detected.\n"
+            return "\n".join(patch_parts)
 
-        patch_file = attempt_dir / f"attempt_{attempt}.patch"
-        patch_file.write_text(full_patch, encoding="utf-8")
-
-        return {
-            "artifact_dir": str(attempt_dir),
-            "patch_file": str(patch_file),
-            "changed_files": list(changed_files)
-        }
+        return "No textual changes detected.\n"
 
     def write_nested_file(self, root_dir, relative_path, content):
         target_path = Path(root_dir) / relative_path

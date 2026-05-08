@@ -126,6 +126,7 @@ def main(argv=None):
     logger.info("[PROJECT_REPAIR] Result: %s", result.final_status)
     logger.info("[PROJECT_REPAIR] Solved: %s", result.solved)
     logger.info("[PROJECT_REPAIR] Artifact dir: %s", result.artifact_dir)
+    logger.info("[PROJECT_REPAIR] Final patch file: %s", result.final_patch_file)
 
 
 if __name__ == "__main__":

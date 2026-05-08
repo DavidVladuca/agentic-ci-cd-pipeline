@@ -31,6 +31,7 @@ class RepairRunResult:
     summary_file: str
     log_file: str
     artifact_dir: str
+    final_patch_file: str | None
     changed_files: list[str]
     patch_files: list[str]
 
@@ -76,11 +77,15 @@ class RepairPipeline:
 
         all_changed_files = []
         all_patch_files = []
+        final_patch_file = None
 
         sandbox = ProjectSandbox(self.project_root)
         sandbox_root = sandbox.prepare_task(repair_task)
 
+        initial_snapshot = self.diff_tracker.snapshot_production_files(sandbox_root)
+
         self.logger.info("[REPAIR] Sandbox root: %s", sandbox_root)
+
         if repair_task.hidden_tests_dir is None:
             self.logger.info("[REPAIR] No hidden tests directory provided.")
         else:
@@ -125,6 +130,7 @@ class RepairPipeline:
                 baseline_status=baseline_status,
                 baseline_error_type=baseline_error_type,
                 artifact_dir=str(task_artifact_dir),
+                final_patch_file=final_patch_file,
                 changed_files=all_changed_files,
                 patch_files=all_patch_files
             )
@@ -269,6 +275,7 @@ class RepairPipeline:
                         baseline_status=baseline_status,
                         baseline_error_type=baseline_error_type,
                         artifact_dir=str(task_artifact_dir),
+                        final_patch_file=final_patch_file,
                         changed_files=all_changed_files,
                         patch_files=all_patch_files
                     )
@@ -307,6 +314,17 @@ class RepairPipeline:
                 self.logger.info("[REPAIR] Passed on repair attempt %s/%s", attempt, self.max_attempts)
                 self.logger.info("[TIMING] Attempt took %.3f seconds", attempt_seconds)
 
+                final_artifact_info = self.diff_tracker.write_final_repair_artifacts(
+                    task_name=repair_task.name,
+                    sandbox_root=sandbox_root,
+                    initial_snapshot=initial_snapshot
+                )
+
+                final_patch_file = final_artifact_info["final_patch_file"]
+                all_changed_files = final_artifact_info["changed_files"]
+
+                self.logger.info("[REPAIR] Final repair patch: %s", final_patch_file)
+
                 metrics.add_attempt(
                     attempt=attempt,
                     status="REPAIR_SUCCESS",
@@ -329,6 +347,7 @@ class RepairPipeline:
                     baseline_status=baseline_status,
                     baseline_error_type=baseline_error_type,
                     artifact_dir=str(task_artifact_dir),
+                    final_patch_file=final_patch_file,
                     changed_files=all_changed_files,
                     patch_files=all_patch_files
                 )
@@ -377,6 +396,7 @@ class RepairPipeline:
                     baseline_status=baseline_status,
                     baseline_error_type=baseline_error_type,
                     artifact_dir=str(task_artifact_dir),
+                    final_patch_file=final_patch_file,
                     changed_files=all_changed_files,
                     patch_files=all_patch_files
                 )
@@ -409,6 +429,7 @@ class RepairPipeline:
             baseline_status=baseline_status,
             baseline_error_type=baseline_error_type,
             artifact_dir=str(task_artifact_dir),
+            final_patch_file=final_patch_file,
             changed_files=all_changed_files,
             patch_files=all_patch_files
         )
@@ -421,9 +442,17 @@ class RepairPipeline:
         baseline_status,
         baseline_error_type,
         artifact_dir,
+        final_patch_file,
         changed_files,
         patch_files
     ):
+        metrics.set_artifacts(
+            artifact_dir=artifact_dir,
+            final_patch_file=final_patch_file,
+            changed_files=changed_files,
+            patch_files=patch_files
+        )
+
         metrics.finish(final_status)
         summary_file = metrics.write_summary(self.project_root, self.log_file)
 
@@ -455,6 +484,7 @@ class RepairPipeline:
             summary_file=str(summary_file),
             log_file=str(self.log_file),
             artifact_dir=artifact_dir,
+            final_patch_file=final_patch_file,
             changed_files=changed_files,
             patch_files=patch_files
         )

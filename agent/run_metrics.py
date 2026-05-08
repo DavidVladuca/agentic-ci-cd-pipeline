@@ -13,6 +13,12 @@ class RunMetrics:
         self.final_status = "RUNNING"
         self.total_seconds = None
         self.attempts = []
+        self.artifacts = {
+            "artifact_dir": None,
+            "final_patch_file": None,
+            "changed_files": [],
+            "patch_files": []
+        }
 
     def add_attempt(
         self,
@@ -44,6 +50,21 @@ class RunMetrics:
             "artifact_dir": artifact_dir
         })
 
+    # store run-level artifact information
+    def set_artifacts(
+        self,
+        artifact_dir=None,
+        final_patch_file=None,
+        changed_files=None,
+        patch_files=None
+    ):
+        self.artifacts = {
+            "artifact_dir": artifact_dir,
+            "final_patch_file": final_patch_file,
+            "changed_files": changed_files or [],
+            "patch_files": patch_files or []
+        }
+
     def finish(self, final_status):
         self.final_status = final_status
         self.total_seconds = round(time.perf_counter() - self.run_start, 3)
@@ -56,6 +77,7 @@ class RunMetrics:
             "max_attempts": self.max_attempts,
             "task_prompt": self.task_prompt,
             "log_file": str(log_file) if log_file else None,
+            "artifacts": self.artifacts,
             "attempts": self.attempts
         }
 

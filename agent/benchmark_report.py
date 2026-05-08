@@ -80,6 +80,7 @@ class BenchmarkReportWriter:
             "summary_file": result.summary_file,
             "log_file": result.log_file,
             "artifact_dir": result.artifact_dir,
+            "final_patch_file": result.final_patch_file,
             "changed_files": result.changed_files,
             "patch_files": result.patch_files
         }
@@ -136,6 +137,7 @@ class BenchmarkReportWriter:
                 "summary_file",
                 "log_file",
                 "artifact_dir",
+                "final_patch_file",
                 "changed_files",
                 "patch_files"
             ])
@@ -157,6 +159,7 @@ class BenchmarkReportWriter:
                     result.summary_file,
                     result.log_file,
                     result.artifact_dir,
+                    result.final_patch_file,
                     ";".join(result.changed_files),
                     ";".join(result.patch_files)
                 ])
