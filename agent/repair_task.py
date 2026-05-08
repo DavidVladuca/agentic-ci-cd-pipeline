@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from agent.task_metadata import TaskMetadata
+
 # dataclass for the repair task + format validity checks
 @dataclass
 class RepairTask:
@@ -9,6 +11,7 @@ class RepairTask:
     prompt: str
     project_dir: Path
     hidden_tests_dir: Path
+    metadata: TaskMetadata
 
     @staticmethod
     def load(task_dir):
@@ -38,10 +41,13 @@ class RepairTask:
         if not prompt:
             raise RuntimeError(f"Repair task prompt is empty: {prompt_file}")
 
+        metadata = TaskMetadata.load(task_dir)
+
         return RepairTask(
             name=task_dir.name,
             task_dir=task_dir,
             prompt=prompt,
             project_dir=project_dir,
-            hidden_tests_dir=hidden_tests_dir
+            hidden_tests_dir=hidden_tests_dir,
+            metadata=metadata
         )

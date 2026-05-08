@@ -16,6 +16,12 @@ from agent.source_context import SourceContextBuilder
 class RepairRunResult:
     task_name: str
     task_dir: str
+    difficulty: str
+    category: str
+    description: str
+    expected_error_type: str | None
+    baseline_status: str
+    baseline_error_type: str | None
     final_status: str
     solved: bool
     total_seconds: float
@@ -25,7 +31,7 @@ class RepairRunResult:
     log_file: str
 
 
-# run one full rapair loop for one task
+# run one full repair loop for one task
 class RepairPipeline:
     def __init__(
         self,
@@ -54,6 +60,9 @@ class RepairPipeline:
         )
 
         self.logger.info("[REPAIR] Loaded repair task: %s", repair_task.name)
+        self.logger.info("[REPAIR] Task difficulty: %s", repair_task.metadata.difficulty)
+        self.logger.info("[REPAIR] Task category: %s", repair_task.metadata.category)
+        self.logger.info("[REPAIR] Expected baseline error type: %s", repair_task.metadata.expected_error_type)
 
         sandbox = ProjectSandbox(self.project_root)
         sandbox_root = sandbox.prepare_task(repair_task)
@@ -75,12 +84,15 @@ class RepairPipeline:
         baseline_result = runner.run_tests()
 
         if baseline_result.success:
+            baseline_status = "BASELINE_UNEXPECTED_SUCCESS"
+            baseline_error_type = None
+
             self.logger.error("[REPAIR] Baseline unexpectedly passed.")
             self.logger.error("[REPAIR] This repair task is invalid because hidden tests did not expose a failure.")
 
             metrics.add_attempt(
                 attempt=0,
-                status="BASELINE_UNEXPECTED_SUCCESS",
+                status=baseline_status,
                 llm_seconds=0.0,
                 workspace_seconds=0.0,
                 maven_seconds=baseline_result.duration_seconds,
@@ -93,7 +105,9 @@ class RepairPipeline:
             return self.finish_run(
                 repair_task=repair_task,
                 metrics=metrics,
-                final_status="BASELINE_UNEXPECTED_SUCCESS"
+                final_status=baseline_status,
+                baseline_status=baseline_status,
+                baseline_error_type=baseline_error_type
             )
 
         baseline_error_summary = ErrorExtractor.extract_errors(
@@ -106,14 +120,23 @@ class RepairPipeline:
             timed_out=baseline_result.timed_out
         )
 
+        baseline_status = "BASELINE_FAILURE_DETECTED"
+
         self.logger.info("[REPAIR] Baseline failure detected.")
         self.logger.info("[REPAIR] Baseline error type: %s", baseline_error_type)
         self.logger.error("[REPAIR] Baseline failure:")
         self.logger.error(baseline_error_summary)
 
+        if repair_task.metadata.expected_error_type and repair_task.metadata.expected_error_type != baseline_error_type:
+            self.logger.error(
+                "[REPAIR] Baseline error type mismatch. Expected %s but got %s",
+                repair_task.metadata.expected_error_type,
+                baseline_error_type
+            )
+
         metrics.add_attempt(
             attempt=0,
-            status="BASELINE_FAILURE_DETECTED",
+            status=baseline_status,
             llm_seconds=0.0,
             workspace_seconds=0.0,
             maven_seconds=baseline_result.duration_seconds,
@@ -194,7 +217,9 @@ class RepairPipeline:
                     return self.finish_run(
                         repair_task=repair_task,
                         metrics=metrics,
-                        final_status="FAILED_REPEATED_LLM_FAILURE"
+                        final_status="FAILED_REPEATED_LLM_FAILURE",
+                        baseline_status=baseline_status,
+                        baseline_error_type=baseline_error_type
                     )
 
                 seen_errors.add(normalized_error)
@@ -243,7 +268,9 @@ class RepairPipeline:
                 return self.finish_run(
                     repair_task=repair_task,
                     metrics=metrics,
-                    final_status="REPAIR_SUCCESS"
+                    final_status="REPAIR_SUCCESS",
+                    baseline_status=baseline_status,
+                    baseline_error_type=baseline_error_type
                 )
 
             error_summary = ErrorExtractor.extract_errors(
@@ -283,7 +310,9 @@ class RepairPipeline:
                 return self.finish_run(
                     repair_task=repair_task,
                     metrics=metrics,
-                    final_status="FAILED_REPEATED_MAVEN_ERROR"
+                    final_status="FAILED_REPEATED_MAVEN_ERROR",
+                    baseline_status=baseline_status,
+                    baseline_error_type=baseline_error_type
                 )
 
             seen_errors.add(normalized_error)
@@ -307,10 +336,12 @@ class RepairPipeline:
         return self.finish_run(
             repair_task=repair_task,
             metrics=metrics,
-            final_status="FAILED_MAX_ATTEMPTS"
+            final_status="FAILED_MAX_ATTEMPTS",
+            baseline_status=baseline_status,
+            baseline_error_type=baseline_error_type
         )
 
-    def finish_run(self, repair_task, metrics, final_status):
+    def finish_run(self, repair_task, metrics, final_status, baseline_status, baseline_error_type):
         metrics.finish(final_status)
         summary_file = metrics.write_summary(self.project_root, self.log_file)
 
@@ -328,6 +359,12 @@ class RepairPipeline:
         return RepairRunResult(
             task_name=repair_task.name,
             task_dir=str(repair_task.task_dir),
+            difficulty=repair_task.metadata.difficulty,
+            category=repair_task.metadata.category,
+            description=repair_task.metadata.description,
+            expected_error_type=repair_task.metadata.expected_error_type,
+            baseline_status=baseline_status,
+            baseline_error_type=baseline_error_type,
             final_status=final_status,
             solved=final_status == "REPAIR_SUCCESS",
             total_seconds=metrics.total_seconds,

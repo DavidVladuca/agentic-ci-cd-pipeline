@@ -1,0 +1,6 @@
+{
+  "difficulty": "easy",
+  "category": "loop-boundary",
+  "description": "Off-by-one loop bug in summation logic.",
+  "expected_error_type": "TEST_FAILURE"
+}

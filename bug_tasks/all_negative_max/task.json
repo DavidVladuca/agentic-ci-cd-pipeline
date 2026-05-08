@@ -1,0 +1,6 @@
+{
+  "difficulty": "easy",
+  "category": "array-edge-case",
+  "description": "Incorrect max initialization breaks all-negative arrays.",
+  "expected_error_type": "TEST_FAILURE"
+}

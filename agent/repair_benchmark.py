@@ -87,7 +87,7 @@ def discover_task_dirs(tasks_dir):
     return task_dirs
 
 
-# benchmark the file
+# benchmark the task suite
 def main(argv=None):
     args = parse_args(argv)
 
@@ -135,9 +135,11 @@ def main(argv=None):
             results.append(result)
 
             logger.info(
-                "[BENCHMARK] Task result: %s | solved=%s | attempts=%s | seconds=%.3f",
+                "[BENCHMARK] Task result: %s | solved=%s | difficulty=%s | category=%s | attempts=%s | seconds=%.3f",
                 result.final_status,
                 result.solved,
+                result.difficulty,
+                result.category,
                 result.repair_attempts,
                 result.total_seconds
             )
@@ -150,6 +152,12 @@ def main(argv=None):
                 RepairRunResult(
                     task_name=task_dir.name,
                     task_dir=str(task_dir),
+                    difficulty="unknown",
+                    category="unknown",
+                    description="Task crashed before metadata could be loaded.",
+                    expected_error_type=None,
+                    baseline_status="TASK_CRASHED",
+                    baseline_error_type="TASK_CRASHED",
                     final_status="TASK_CRASHED",
                     solved=False,
                     total_seconds=0.0,

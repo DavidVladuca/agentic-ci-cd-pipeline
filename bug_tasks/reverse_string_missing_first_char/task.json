@@ -1,0 +1,6 @@
+{
+  "difficulty": "easy",
+  "category": "string-indexing",
+  "description": "Reverse loop skips the first character because of an incorrect boundary.",
+  "expected_error_type": "TEST_FAILURE"
+}
