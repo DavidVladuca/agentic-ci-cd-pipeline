@@ -1,0 +1,10 @@
+Fix the bug in App.sumUpTo(int n).
+
+The method should return the sum of all integers from 1 through n.
+
+Requirements:
+- sumUpTo(0) should return 0.
+- sumUpTo(1) should return 1.
+- sumUpTo(5) should return 15.
+- Negative input should throw IllegalArgumentException.
+- Do not change the public method signature.
