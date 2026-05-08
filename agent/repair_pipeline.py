@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import time
 
+from agent.diff_tracker import DiffTracker
 from agent.docker_runner import DockerRunner
 from agent.error_extractor import ErrorExtractor
 from agent.file_rewriter import FileRewriter
@@ -29,6 +30,9 @@ class RepairRunResult:
     final_error_type: str | None
     summary_file: str
     log_file: str
+    artifact_dir: str
+    changed_files: list[str]
+    patch_files: list[str]
 
 
 # run one full repair loop for one task
@@ -50,6 +54,7 @@ class RepairPipeline:
         self.max_attempts = max_attempts
         self.docker_image = docker_image
         self.timeout_seconds = timeout_seconds
+        self.diff_tracker = DiffTracker(self.project_root)
 
     def run_task(self, task_dir):
         repair_task = RepairTask.load(task_dir)
@@ -63,6 +68,12 @@ class RepairPipeline:
         self.logger.info("[REPAIR] Task difficulty: %s", repair_task.metadata.difficulty)
         self.logger.info("[REPAIR] Task category: %s", repair_task.metadata.category)
         self.logger.info("[REPAIR] Expected baseline error type: %s", repair_task.metadata.expected_error_type)
+
+        task_artifact_dir = self.diff_tracker.prepare_task_dir(repair_task.name)
+        self.logger.info("[REPAIR] Task artifact dir: %s", task_artifact_dir)
+
+        all_changed_files = []
+        all_patch_files = []
 
         sandbox = ProjectSandbox(self.project_root)
         sandbox_root = sandbox.prepare_task(repair_task)
@@ -107,7 +118,10 @@ class RepairPipeline:
                 metrics=metrics,
                 final_status=baseline_status,
                 baseline_status=baseline_status,
-                baseline_error_type=baseline_error_type
+                baseline_error_type=baseline_error_type,
+                artifact_dir=str(task_artifact_dir),
+                changed_files=all_changed_files,
+                patch_files=all_patch_files
             )
 
         baseline_error_summary = ErrorExtractor.extract_errors(
@@ -155,6 +169,9 @@ class RepairPipeline:
             llm_seconds = 0.0
             workspace_seconds = 0.0
             maven_seconds = 0.0
+            attempt_changed_files = []
+            attempt_patch_file = None
+            attempt_artifact_dir = None
 
             self.logger.info("")
             self.logger.info("[REPAIR] Repair attempt %s/%s", attempt, self.max_attempts)
@@ -175,6 +192,8 @@ class RepairPipeline:
                 llm_seconds = time.perf_counter() - llm_start
                 self.logger.info("[TIMING] LLM repair generation took %.3f seconds", llm_seconds)
 
+                before_snapshot = self.diff_tracker.snapshot_production_files(sandbox_root)
+
                 self.logger.info("[REPAIR] Applying LLM file edits...")
                 workspace_start = time.perf_counter()
 
@@ -183,6 +202,27 @@ class RepairPipeline:
                 workspace_seconds = time.perf_counter() - workspace_start
                 self.logger.info("[TIMING] File rewrite took %.3f seconds", workspace_seconds)
                 self.logger.info("[REPAIR] Written files: %s", ", ".join(written_paths))
+
+                artifact_info = self.diff_tracker.write_attempt_artifacts(
+                    task_name=repair_task.name,
+                    attempt=attempt,
+                    sandbox_root=sandbox_root,
+                    before_snapshot=before_snapshot,
+                    changed_files=written_paths
+                )
+
+                attempt_changed_files = artifact_info["changed_files"]
+                attempt_patch_file = artifact_info["patch_file"]
+                attempt_artifact_dir = artifact_info["artifact_dir"]
+
+                all_patch_files.append(attempt_patch_file)
+
+                for changed_file in attempt_changed_files:
+                    if changed_file not in all_changed_files:
+                        all_changed_files.append(changed_file)
+
+                self.logger.info("[REPAIR] Attempt artifacts: %s", attempt_artifact_dir)
+                self.logger.info("[REPAIR] Patch file: %s", attempt_patch_file)
 
             # this is for catching errors before Docker/Maven runs!!!
             except RuntimeError as e:
@@ -211,7 +251,10 @@ class RepairPipeline:
                         attempt_seconds=attempt_seconds,
                         exit_code=None,
                         error_type=error_type,
-                        error_summary=error_summary
+                        error_summary=error_summary,
+                        changed_files=attempt_changed_files,
+                        patch_file=attempt_patch_file,
+                        artifact_dir=attempt_artifact_dir
                     )
 
                     return self.finish_run(
@@ -219,7 +262,10 @@ class RepairPipeline:
                         metrics=metrics,
                         final_status="FAILED_REPEATED_LLM_FAILURE",
                         baseline_status=baseline_status,
-                        baseline_error_type=baseline_error_type
+                        baseline_error_type=baseline_error_type,
+                        artifact_dir=str(task_artifact_dir),
+                        changed_files=all_changed_files,
+                        patch_files=all_patch_files
                     )
 
                 seen_errors.add(normalized_error)
@@ -234,7 +280,10 @@ class RepairPipeline:
                     attempt_seconds=attempt_seconds,
                     exit_code=None,
                     error_type=error_type,
-                    error_summary=error_summary
+                    error_summary=error_summary,
+                    changed_files=attempt_changed_files,
+                    patch_file=attempt_patch_file,
+                    artifact_dir=attempt_artifact_dir
                 )
 
                 continue
@@ -262,7 +311,10 @@ class RepairPipeline:
                     attempt_seconds=attempt_seconds,
                     exit_code=result.exit_code,
                     error_type=None,
-                    error_summary=None
+                    error_summary=None,
+                    changed_files=attempt_changed_files,
+                    patch_file=attempt_patch_file,
+                    artifact_dir=attempt_artifact_dir
                 )
 
                 return self.finish_run(
@@ -270,7 +322,10 @@ class RepairPipeline:
                     metrics=metrics,
                     final_status="REPAIR_SUCCESS",
                     baseline_status=baseline_status,
-                    baseline_error_type=baseline_error_type
+                    baseline_error_type=baseline_error_type,
+                    artifact_dir=str(task_artifact_dir),
+                    changed_files=all_changed_files,
+                    patch_files=all_patch_files
                 )
 
             error_summary = ErrorExtractor.extract_errors(
@@ -304,7 +359,10 @@ class RepairPipeline:
                     attempt_seconds=attempt_seconds,
                     exit_code=result.exit_code,
                     error_type=error_type,
-                    error_summary=error_summary
+                    error_summary=error_summary,
+                    changed_files=attempt_changed_files,
+                    patch_file=attempt_patch_file,
+                    artifact_dir=attempt_artifact_dir
                 )
 
                 return self.finish_run(
@@ -312,7 +370,10 @@ class RepairPipeline:
                     metrics=metrics,
                     final_status="FAILED_REPEATED_MAVEN_ERROR",
                     baseline_status=baseline_status,
-                    baseline_error_type=baseline_error_type
+                    baseline_error_type=baseline_error_type,
+                    artifact_dir=str(task_artifact_dir),
+                    changed_files=all_changed_files,
+                    patch_files=all_patch_files
                 )
 
             seen_errors.add(normalized_error)
@@ -327,7 +388,10 @@ class RepairPipeline:
                 attempt_seconds=attempt_seconds,
                 exit_code=result.exit_code,
                 error_type=error_type,
-                error_summary=error_summary
+                error_summary=error_summary,
+                changed_files=attempt_changed_files,
+                patch_file=attempt_patch_file,
+                artifact_dir=attempt_artifact_dir
             )
 
         self.logger.error("")
@@ -338,10 +402,23 @@ class RepairPipeline:
             metrics=metrics,
             final_status="FAILED_MAX_ATTEMPTS",
             baseline_status=baseline_status,
-            baseline_error_type=baseline_error_type
+            baseline_error_type=baseline_error_type,
+            artifact_dir=str(task_artifact_dir),
+            changed_files=all_changed_files,
+            patch_files=all_patch_files
         )
 
-    def finish_run(self, repair_task, metrics, final_status, baseline_status, baseline_error_type):
+    def finish_run(
+        self,
+        repair_task,
+        metrics,
+        final_status,
+        baseline_status,
+        baseline_error_type,
+        artifact_dir,
+        changed_files,
+        patch_files
+    ):
         metrics.finish(final_status)
         summary_file = metrics.write_summary(self.project_root, self.log_file)
 
@@ -371,5 +448,8 @@ class RepairPipeline:
             repair_attempts=repair_attempts,
             final_error_type=last_attempt.get("error_type"),
             summary_file=str(summary_file),
-            log_file=str(self.log_file)
+            log_file=str(self.log_file),
+            artifact_dir=artifact_dir,
+            changed_files=changed_files,
+            patch_files=patch_files
         )

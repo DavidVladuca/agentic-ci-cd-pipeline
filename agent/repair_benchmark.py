@@ -164,7 +164,10 @@ def main(argv=None):
                     repair_attempts=0,
                     final_error_type="TASK_CRASHED",
                     summary_file="",
-                    log_file=str(log_file)
+                    log_file=str(log_file),
+                    artifact_dir="",
+                    changed_files=[],
+                    patch_files=[]
                 )
             )
 

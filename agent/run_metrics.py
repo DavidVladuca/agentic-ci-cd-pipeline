@@ -24,7 +24,10 @@ class RunMetrics:
         attempt_seconds=0.0,
         exit_code=None,
         error_type=None,
-        error_summary=None
+        error_summary=None,
+        changed_files=None,
+        patch_file=None,
+        artifact_dir=None
     ):
         self.attempts.append({
             "attempt": attempt,
@@ -35,7 +38,10 @@ class RunMetrics:
             "attempt_seconds": round(attempt_seconds, 3),
             "exit_code": exit_code,
             "error_type": error_type,
-            "error_summary": self.shorten(error_summary)
+            "error_summary": self.shorten(error_summary),
+            "changed_files": changed_files or [],
+            "patch_file": patch_file,
+            "artifact_dir": artifact_dir
         })
 
     def finish(self, final_status):

@@ -27,3 +27,5 @@ bug_tasks/**/target/
 bug_tasks/**/project/target/
 
 reports/
+
+artifacts/

@@ -78,7 +78,10 @@ class BenchmarkReportWriter:
             "total_seconds": result.total_seconds,
             "final_error_type": result.final_error_type,
             "summary_file": result.summary_file,
-            "log_file": result.log_file
+            "log_file": result.log_file,
+            "artifact_dir": result.artifact_dir,
+            "changed_files": result.changed_files,
+            "patch_files": result.patch_files
         }
 
     def group_stats(self, results, field_name):
@@ -131,7 +134,10 @@ class BenchmarkReportWriter:
                 "total_seconds",
                 "final_error_type",
                 "summary_file",
-                "log_file"
+                "log_file",
+                "artifact_dir",
+                "changed_files",
+                "patch_files"
             ])
 
             for result in results:
@@ -149,7 +155,10 @@ class BenchmarkReportWriter:
                     result.total_seconds,
                     result.final_error_type,
                     result.summary_file,
-                    result.log_file
+                    result.log_file,
+                    result.artifact_dir,
+                    ";".join(result.changed_files),
+                    ";".join(result.patch_files)
                 ])
 
     @staticmethod
