@@ -1,0 +1,11 @@
+Fix the bug in TransferService.transfer(Account from, Account to, int amount).
+
+The method should move money from the source account to the destination account.
+
+Requirements:
+- The source account balance should decrease by amount.
+- The destination account balance should increase by amount.
+- Null accounts should throw IllegalArgumentException.
+- Negative transfer amounts should throw IllegalArgumentException.
+- Transfers larger than the source balance should throw IllegalArgumentException.
+- Do not change public method signatures.

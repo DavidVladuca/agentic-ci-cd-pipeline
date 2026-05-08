@@ -20,9 +20,7 @@ class FileRewriter:
             self.validate_path(relative_path)
 
             target_path = (self.sandbox_root / relative_path).resolve()
-
-            if not str(target_path).startswith(str(self.sandbox_root)):
-                raise RuntimeError(f"Refusing to write outside sandbox: {relative_path}")
+            self.validate_target_path(target_path, relative_path)
 
             target_path.parent.mkdir(parents=True, exist_ok=True)
             target_path.write_text(content, encoding="utf-8")
@@ -70,3 +68,21 @@ class FileRewriter:
 
         if not relative_path.endswith(".java"):
             raise RuntimeError(f"LLM may only modify .java files, got: {relative_path}")
+
+    def validate_target_path(self, target_path, relative_path):
+        try:
+            target_path.relative_to(self.sandbox_root)
+        except ValueError as e:
+            raise RuntimeError(f"Refusing to write outside sandbox: {relative_path}") from e
+
+        if not target_path.exists():
+            raise RuntimeError(
+                f"LLM tried to create a new file. Phase 11 only allows editing existing production files: {relative_path}"
+            )
+
+        try:
+            target_path.relative_to(self.production_root)
+        except ValueError as e:
+            raise RuntimeError(
+                f"LLM may only modify files under src/main/java/, got: {relative_path}"
+            ) from e

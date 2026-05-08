@@ -154,11 +154,16 @@ class LLMClient:
                 - the current source files
                 - the latest Maven/JUnit failure output
 
+                There may be multiple production Java files.
+
                 Your job:
-                - modify the production Java source code to satisfy the task
+                - understand the project structure
+                - identify which existing production Java file or files contain the bug
+                - modify only the existing production Java source files needed to fix the bug
                 - preserve public method signatures
                 - do not modify tests
                 - do not modify pom.xml
+                - do not create new files
                 - do not add package declarations
                 - keep all classes in the default package
                 - produce Java 17 compatible code
@@ -184,9 +189,10 @@ class LLMClient:
                 - content
 
                 Rules:
+                - return only files that need to be changed
                 - path must be the exact relative path shown after FILE:
-                - if repairing App.java, use "src/main/java/App.java", not "App.java"
                 - path must be under src/main/java/
+                - path must refer to an existing production Java file
                 - content must contain the full corrected Java file content
                 - do not modify files under src/test/java/
                 - do not modify hidden tests
@@ -196,14 +202,28 @@ class LLMClient:
                 - do not explain anything
                 - do not include extra keys
 
-                Example valid output:
+                Example valid output for one changed file:
                 {{
-                  "files": [
+                "files": [
                     {{
-                      "path": "src/main/java/App.java",
-                      "content": "public class App {{\\n    // corrected code here\\n}}"
+                    "path": "src/main/java/TransferService.java",
+                    "content": "public class TransferService {{\\n    // corrected code here\\n}}"
                     }}
-                  ]
+                ]
+                }}
+
+                Example valid output for two changed files:
+                {{
+                "files": [
+                    {{
+                    "path": "src/main/java/ClassA.java",
+                    "content": "public class ClassA {{\\n    // corrected code here\\n}}"
+                    }},
+                    {{
+                    "path": "src/main/java/ClassB.java",
+                    "content": "public class ClassB {{\\n    // corrected code here\\n}}"
+                    }}
+                ]
                 }}
                 """.strip()
 

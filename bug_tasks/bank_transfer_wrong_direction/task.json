@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "stateful-object",
+  "description": "TransferService moves money in the wrong direction between Account objects.",
+  "expected_error_type": "TEST_FAILURE"
+}

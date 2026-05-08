@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "multi-file-domain-logic",
+  "description": "Cart total calculation ignores LineItem quantity.",
+  "expected_error_type": "TEST_FAILURE"
+}

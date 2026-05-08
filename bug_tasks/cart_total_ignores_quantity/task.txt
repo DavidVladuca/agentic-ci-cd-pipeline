@@ -1,0 +1,11 @@
+Fix the bug in the shopping cart total calculation.
+
+The cart total should equal the sum of each line item's product price multiplied by its quantity.
+
+Requirements:
+- A cart with one item of quantity 1 should return that product's price.
+- A cart with one item of quantity greater than 1 should multiply by quantity.
+- A cart with multiple items should sum all line totals.
+- Invalid product price should throw IllegalArgumentException.
+- Invalid quantity should throw IllegalArgumentException.
+- Do not change public method signatures.
