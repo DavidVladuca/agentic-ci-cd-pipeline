@@ -58,7 +58,9 @@ class RepairPipeline:
 
     def run_task(self, task_dir):
         repair_task = RepairTask.load(task_dir)
+        return self.run_repair_task(repair_task)
 
+    def run_repair_task(self, repair_task):
         metrics = RunMetrics(
             task_prompt=repair_task.prompt,
             max_attempts=self.max_attempts
@@ -79,7 +81,10 @@ class RepairPipeline:
         sandbox_root = sandbox.prepare_task(repair_task)
 
         self.logger.info("[REPAIR] Sandbox root: %s", sandbox_root)
-        self.logger.info("[REPAIR] Hidden tests injected from: %s", repair_task.hidden_tests_dir)
+        if repair_task.hidden_tests_dir is None:
+            self.logger.info("[REPAIR] No hidden tests directory provided.")
+        else:
+            self.logger.info("[REPAIR] Hidden tests injected from: %s", repair_task.hidden_tests_dir)
 
         runner = DockerRunner(
             sandbox_root=sandbox_root,

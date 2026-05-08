@@ -2,7 +2,7 @@ from pathlib import Path
 import shutil
 
 # copies the broken Java project into the repair sandbox
-# and then inject hidden tests
+# and then inject hidden tests if they exist
 class ProjectSandbox:
     def __init__(self, project_root):
         self.project_root = Path(project_root)
@@ -16,10 +16,11 @@ class ProjectSandbox:
 
         shutil.copytree(repair_task.project_dir, sandbox_root)
 
-        self.copy_tree_contents(
-            source_dir=repair_task.hidden_tests_dir,
-            target_dir=sandbox_root
-        )
+        if repair_task.hidden_tests_dir is not None:
+            self.copy_tree_contents(
+                source_dir=repair_task.hidden_tests_dir,
+                target_dir=sandbox_root
+            )
 
         return sandbox_root
 
