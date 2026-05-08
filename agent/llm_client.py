@@ -5,8 +5,7 @@ import urllib.error
 # this is the LLM communication layer
 # doesnt write files, run maven or log
 # has only one responsability:
-# send a task/error feedback to Ollama, force the model to return JSON, parse + validate
-# and return clean Java code strings or repair file edits
+# send a task/error feedback to Ollama, force the model to return JSON, parse + validate, and return clean Java code strings or repair file edits
 class LLMClient:
     def __init__(self, model="agent-coder", url="http://localhost:11434/api/generate"):
         self.model = model
@@ -14,11 +13,11 @@ class LLMClient:
 
     def generate_code(self, task_prompt, previous_error=None):
         # if no error -> normal prompt
-        # if error -> repair prompt with error details
+        # if error -> retry prompt with error details
         if previous_error is None:
             prompt = self.build_initial_prompt(task_prompt)
         else:
-            prompt = self.build_repair_prompt(task_prompt, previous_error)
+            prompt = self.build_retry_prompt(task_prompt, previous_error)
 
         code_json = self.call_ollama_json(prompt)
         self.validate_code_json(code_json)
@@ -83,30 +82,36 @@ class LLMClient:
         return f"""
                 You are generating Java code for a Maven project.
 
-                {self.common_rules()}
+                {self.common_code_generation_rules()}
 
                 Task:
                 {task_prompt}
                 """.strip()
 
-    # if Maven fails, we get here, and we fix based on error
-    def build_repair_prompt(self, task_prompt, previous_error):
+    # if generation, schema validation, compilation, or tests fail, we get here and retry
+    def build_retry_prompt(self, task_prompt, previous_error):
         return f"""
-                The previous generated Java code failed when Maven ran the tests.
+                The previous attempt failed.
+
+                The failure may have been:
+                - invalid JSON schema
+                - invalid Java code
+                - Maven compilation failure
+                - JUnit test failure
 
                 Original task:
                 {task_prompt}
 
-                Maven failure output:
+                Failure output:
                 {previous_error}
 
-                Generate corrected Java code and corrected JUnit tests.
+                Generate a corrected response.
 
-                {self.common_rules()}
+                {self.common_code_generation_rules()}
                 """.strip()
 
-    # these are some shared rules (in both cases they must be respected)
-    def common_rules(self):
+    # these are shared rules for V1 code-generation mode
+    def common_code_generation_rules(self):
         return """
                 Return only a raw JSON object.
 
@@ -114,28 +119,30 @@ class LLMClient:
                 - main_class
                 - test_class
 
-                Rules:
-                - path must be the exact relative path shown after FILE:
-                - if repairing App.java, use "src/main/java/App.java", not "App.java"
-                - path must be under src/main/java/
-                - content must contain the full corrected Java file content
-                - do not modify files under src/test/java/
-                - do not modify hidden tests
-                - do not modify public tests
-                - do not modify pom.xml
-                - do not include Markdown
-                - do not explain anything
-                - do not include extra keys
+                main_class must be a JSON string.
+                test_class must be a JSON string.
 
-                Example valid output:
-                {{
-                  "files": [
-                    {{
-                      "path": "src/main/java/App.java",
-                      "content": "public class App {{\\n    // corrected code here\\n}}"
-                    }}
-                  ]
-                }}
+                Do not make main_class an object.
+                Do not make test_class an object.
+                Do not include file paths.
+                Do not include arrays.
+                Do not include nested JSON objects.
+
+                Required JSON shape:
+                {
+                  "main_class": "public class App {\\n    // full Java source here\\n}",
+                  "test_class": "import org.junit.jupiter.api.Test;\\npublic class AppTest {\\n    // full JUnit 5 test source here\\n}"
+                }
+
+                Rules:
+                - main_class must contain one complete Java class named App.
+                - test_class must contain one complete JUnit 5 test class named AppTest.
+                - Do not use package declarations.
+                - Do not use Markdown.
+                - Do not explain anything.
+                - Do not include extra keys.
+                - The Java code must compile with Java 17.
+                - The test class must test the main class.
                 """.strip()
 
     def build_file_repair_prompt(self, task_prompt, source_context, previous_error):
@@ -177,11 +184,27 @@ class LLMClient:
                 - content
 
                 Rules:
-                - path must be a relative path under src/main/java/
+                - path must be the exact relative path shown after FILE:
+                - if repairing App.java, use "src/main/java/App.java", not "App.java"
+                - path must be under src/main/java/
                 - content must contain the full corrected Java file content
+                - do not modify files under src/test/java/
+                - do not modify hidden tests
+                - do not modify public tests
+                - do not modify pom.xml
                 - do not include Markdown
                 - do not explain anything
                 - do not include extra keys
+
+                Example valid output:
+                {{
+                  "files": [
+                    {{
+                      "path": "src/main/java/App.java",
+                      "content": "public class App {{\\n    // corrected code here\\n}}"
+                    }}
+                  ]
+                }}
                 """.strip()
 
     # verify if the LLM followed the constraints from the prompt

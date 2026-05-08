@@ -1,0 +1,11 @@
+Fix the bug in App.max(int[] values).
+
+The method should return the maximum value in the array.
+
+Requirements:
+- Positive arrays should return the largest value.
+- Mixed positive and negative arrays should return the largest value.
+- All-negative arrays should return the least negative value.
+- Null input should throw IllegalArgumentException.
+- Empty arrays should throw IllegalArgumentException.
+- Do not change the public method signature.

@@ -57,7 +57,8 @@ class RunMetrics:
         logs_dir = Path(project_root) / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # microseconds prevent filename collisions during benchmark runs!!!
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         summary_file = logs_dir / f"run_summary_{timestamp}.json"
 
         summary_file.write_text(

@@ -1,0 +1,10 @@
+Fix the bug in App.reverse(String input).
+
+The method should return the reverse of the input string.
+
+Requirements:
+- Empty string should return empty string.
+- "abc" should return "cba".
+- "hello" should return "olleh".
+- Null input should throw IllegalArgumentException.
+- Do not change the public method signature.
