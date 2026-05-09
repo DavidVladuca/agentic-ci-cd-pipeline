@@ -171,6 +171,21 @@ class RepairPipeline:
             error_summary=baseline_error_summary
         )
 
+        if baseline_error_type in {"DEPENDENCY_RESOLUTION_ERROR", "DOCKER_ERROR", "SANDBOX_ERROR", "TIMEOUT"}:
+            self.logger.error("[REPAIR] Baseline failed because of infrastructure, not project code. Stopping before LLM repair.")
+
+            return self.finish_run(
+                repair_task=repair_task,
+                metrics=metrics,
+                final_status=f"FAILED_BASELINE_{baseline_error_type}",
+                baseline_status=baseline_status,
+                baseline_error_type=baseline_error_type,
+                artifact_dir=str(task_artifact_dir),
+                final_patch_file=final_patch_file,
+                changed_files=all_changed_files,
+                patch_files=all_patch_files
+            )
+
         last_error_summary = baseline_error_summary
         seen_errors = set()  # to see if we are stuck in a loop with the same repair failure
 

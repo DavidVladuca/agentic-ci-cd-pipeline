@@ -78,6 +78,12 @@ class ErrorExtractor:
         if error_type == "DEPENDENCY_RESOLUTION_ERROR":
             return "DEPENDENCY_RESOLUTION_ERROR"
 
+        if error_type == "DOCKER_ERROR":
+            return "DOCKER_ERROR"
+
+        if error_type == "SANDBOX_ERROR":
+            return "SANDBOX_ERROR"
+
         if error_type == "TIMEOUT":
             return "TIMEOUT"
 
@@ -107,6 +113,35 @@ class ErrorExtractor:
             return "LLM_ERROR"
 
         if (
+            "docker executable not found" in lowered
+            or "cannot connect to the docker daemon" in lowered
+            or "error response from daemon" in lowered
+            or "docker daemon" in lowered
+        ):
+            return "DOCKER_ERROR"
+
+        if (
+            "read-only file system" in lowered
+            or "permission denied" in lowered
+            or "operation not permitted" in lowered
+            or "no-new-privileges" in lowered
+            or "pids-limit" in lowered
+            or "mounts denied" in lowered
+            or "invalid mount config" in lowered
+        ):
+            return "SANDBOX_ERROR"
+
+        if (
+            "could not transfer artifact" in lowered
+            or "could not be resolved" in lowered
+            or "failed to collect dependencies" in lowered
+            or "unknown host" in lowered
+            or "temporary failure in name resolution" in lowered
+            or "cannot access central" in lowered
+        ):
+            return "DEPENDENCY_RESOLUTION_ERROR"
+
+        if (
             "compilation error" in lowered
             or "compilation failure" in lowered
             or "cannot find symbol" in lowered
@@ -125,15 +160,6 @@ class ErrorExtractor:
             or "failures:" in lowered
         ):
             return "TEST_FAILURE"
-        
-        if (
-            "could not transfer artifact" in lowered
-            or "could not be resolved" in lowered
-            or "failed to collect dependencies" in lowered
-            or "unknown host" in lowered
-            or "temporary failure in name resolution" in lowered
-        ):
-            return "DEPENDENCY_RESOLUTION_ERROR"
 
         if "timed out" in lowered:
             return "TIMEOUT"
