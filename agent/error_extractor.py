@@ -1,13 +1,17 @@
 # this class extracts errors and useful info, classifies and normalizes them
 class ErrorExtractor:
     @staticmethod
-    def extract_errors(raw_output, timed_out=False):
-        if raw_output is None: # just in case
+    def extract_errors(raw_output, timed_out=False, timeout_seconds=None):
+        if raw_output is None:
             raw_output = ""
 
         prefix = ""
+
         if timed_out:
-            prefix = "Maven timed out after 15 seconds.\n"
+            if timeout_seconds is None:
+                prefix = "Maven timed out.\n"
+            else:
+                prefix = f"Maven timed out after {timeout_seconds} seconds.\n"
 
         useful_lines = []
 
@@ -24,13 +28,15 @@ class ErrorExtractor:
             useful_lines.append(stripped)
 
         # if we have useful lines -> take last 40
-        # if not -> take last 40 lines of raw output (to have something to work with)
+        # if not -> take last 40 lines of raw output
         if useful_lines:
             selected_lines = useful_lines[-40:]
         else:
             raw_lines = []
+
             for line in raw_output.splitlines():
                 stripped = line.strip()
+
                 if stripped:
                     raw_lines.append(stripped)
 

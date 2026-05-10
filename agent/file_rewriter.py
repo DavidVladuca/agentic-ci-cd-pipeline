@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 # applies the changes requested by the LLM after validation
 class FileRewriter:
     def __init__(self, sandbox_root):
@@ -7,10 +8,39 @@ class FileRewriter:
         self.production_root = self.sandbox_root / "src" / "main" / "java"
 
     def apply_files(self, files):
+        write_plan = self.build_write_plan(files)
+
+        backups = {}
+
+        for relative_path, target_path, _content in write_plan:
+            backups[target_path] = target_path.read_text(
+                encoding="utf-8",
+                errors="replace"
+            )
+
         written_paths = []
 
+        try:
+            for relative_path, target_path, content in write_plan:
+                self.write_file_safely(target_path, content)
+                written_paths.append(relative_path)
+
+        except Exception as e:
+            self.restore_backups(backups)
+
+            raise RuntimeError(
+                "Failed while applying LLM file edits. "
+                "The sandbox files modified during this attempt were restored."
+            ) from e
+
+        return written_paths
+
+    def build_write_plan(self, files):
         if not files:
             raise RuntimeError("LLM repair output did not include any files to write.")
+
+        write_plan = []
+        seen_relative_paths = set()
 
         for file_entry in files:
             raw_path = file_entry["path"].replace("\\", "/")
@@ -19,15 +49,17 @@ class FileRewriter:
             relative_path = self.normalize_path(raw_path)
             self.validate_path(relative_path)
 
+            if relative_path in seen_relative_paths:
+                raise RuntimeError(f"Duplicate normalized repair file path: {relative_path}")
+
+            seen_relative_paths.add(relative_path)
+
             target_path = (self.sandbox_root / relative_path).resolve()
             self.validate_target_path(target_path, relative_path)
 
-            target_path.parent.mkdir(parents=True, exist_ok=True)
-            target_path.write_text(content, encoding="utf-8")
+            write_plan.append((relative_path, target_path, content))
 
-            written_paths.append(relative_path)
-
-        return written_paths
+        return write_plan
 
     # if LLM returns "App.java", map it to "src/main/java/App.java" for example
     def normalize_path(self, raw_path):
@@ -77,8 +109,12 @@ class FileRewriter:
 
         if not target_path.exists():
             raise RuntimeError(
-                f"LLM tried to create a new file. Phase 11 only allows editing existing production files: {relative_path}"
+                f"LLM tried to create a new file. "
+                f"Phase 19 only allows editing existing production files: {relative_path}"
             )
+
+        if not target_path.is_file():
+            raise RuntimeError(f"LLM target path is not a file: {relative_path}")
 
         try:
             target_path.relative_to(self.production_root)
@@ -86,3 +122,17 @@ class FileRewriter:
             raise RuntimeError(
                 f"LLM may only modify files under src/main/java/, got: {relative_path}"
             ) from e
+
+    def write_file_safely(self, target_path, content):
+        temporary_path = target_path.with_name(target_path.name + ".agent_tmp")
+
+        try:
+            temporary_path.write_text(content, encoding="utf-8")
+            temporary_path.replace(target_path)
+        finally:
+            if temporary_path.exists():
+                temporary_path.unlink()
+
+    def restore_backups(self, backups):
+        for target_path, original_content in backups.items():
+            target_path.write_text(original_content, encoding="utf-8")

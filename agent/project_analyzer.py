@@ -24,6 +24,7 @@ class ProjectAnalysis:
     public_test_files: list[JavaFileInfo]
     by_path: dict[str, JavaFileInfo]
     by_class_name: dict[str, list[JavaFileInfo]]
+    hidden_test_paths: set[str]
 
 
 # scans a sandboxed Maven project and extracts cheap metadata for file selection
@@ -72,11 +73,16 @@ class ProjectAnalyzer:
         "assertNotNull"
     }
 
-    def analyze(self, sandbox_root):
+    def analyze(self, sandbox_root, hidden_test_paths=None):
         sandbox_root = Path(sandbox_root).resolve()
+        hidden_test_paths = self.normalize_hidden_test_paths(hidden_test_paths)
 
         production_paths = self.collect_java_files(sandbox_root / "src" / "main" / "java")
-        public_test_paths = self.collect_public_test_files(sandbox_root / "src" / "test" / "java")
+        public_test_paths = self.collect_public_test_files(
+            directory=sandbox_root / "src" / "test" / "java",
+            sandbox_root=sandbox_root,
+            hidden_test_paths=hidden_test_paths
+        )
 
         production_files = [
             self.analyze_file(sandbox_root, path, "production")
@@ -105,7 +111,8 @@ class ProjectAnalyzer:
             production_files=production_files,
             public_test_files=public_test_files,
             by_path=by_path,
-            by_class_name=by_class_name
+            by_class_name=by_class_name,
+            hidden_test_paths=hidden_test_paths
         )
 
     def analyze_file(self, sandbox_root, file_path, kind):
@@ -135,7 +142,7 @@ class ProjectAnalyzer:
             if path.is_file()
         )
 
-    def collect_public_test_files(self, directory):
+    def collect_public_test_files(self, directory, sandbox_root, hidden_test_paths):
         directory = Path(directory)
 
         if not directory.exists():
@@ -147,8 +154,13 @@ class ProjectAnalyzer:
             if not path.is_file():
                 continue
 
-            # Current convention: hidden tests must contain "hidden" in the file name.
-            # This is acceptable for the current benchmark, but should eventually become manifest-based.
+            relative_path = path.relative_to(sandbox_root).as_posix()
+
+            if relative_path in hidden_test_paths:
+                continue
+
+            # Legacy safety fallback.
+            # Hidden test origin tracking is now the main mechanism.
             if "hidden" in path.name.lower():
                 continue
 
@@ -182,3 +194,13 @@ class ProjectAnalyzer:
             method_names.append(name)
 
         return sorted(set(method_names))
+
+    @staticmethod
+    def normalize_hidden_test_paths(hidden_test_paths):
+        if hidden_test_paths is None:
+            return set()
+
+        return {
+            str(path).replace("\\", "/")
+            for path in hidden_test_paths
+        }

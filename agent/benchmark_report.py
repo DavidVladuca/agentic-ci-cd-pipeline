@@ -67,6 +67,7 @@ class BenchmarkReportWriter:
                 sum(result.repair_attempts for result in results),
                 total_tasks
             ),
+            "validity": self.build_validity_data(results),
             "by_difficulty": self.group_stats(results, "difficulty"),
             "by_category": self.group_stats(results, "category"),
             "tasks": [
@@ -75,10 +76,58 @@ class BenchmarkReportWriter:
             ]
         }
 
+    def build_validity_data(self, results):
+        baseline_failures_detected = []
+        baseline_unexpected_successes = []
+        expected_error_type_mismatches = []
+        solved_without_changed_files = []
+        crashed_tasks = []
+
+        for result in results:
+            if result.baseline_status == "BASELINE_FAILURE_DETECTED":
+                baseline_failures_detected.append(result.task_name)
+
+            if result.baseline_status == "BASELINE_UNEXPECTED_SUCCESS":
+                baseline_unexpected_successes.append(result.task_name)
+
+            if result.final_status == "TASK_CRASHED":
+                crashed_tasks.append(result.task_name)
+
+            if (
+                result.expected_error_type
+                and result.baseline_error_type
+                and result.expected_error_type != result.baseline_error_type
+            ):
+                expected_error_type_mismatches.append({
+                    "task_name": result.task_name,
+                    "expected": result.expected_error_type,
+                    "actual": result.baseline_error_type
+                })
+
+            if result.solved and not result.changed_files:
+                solved_without_changed_files.append(result.task_name)
+
+        total_tasks = len(results)
+
+        return {
+            "total_tasks": total_tasks,
+            "baseline_failures_detected": len(baseline_failures_detected),
+            "baseline_unexpected_successes": len(baseline_unexpected_successes),
+            "expected_error_type_mismatches": expected_error_type_mismatches,
+            "solved_without_changed_files": solved_without_changed_files,
+            "crashed_tasks": crashed_tasks,
+            "valid_for_basic_repair_claim": (
+                total_tasks > 0
+                and len(baseline_unexpected_successes) == 0
+                and len(expected_error_type_mismatches) == 0
+                and len(crashed_tasks) == 0
+            )
+        }
+
     def task_to_dict(self, result):
         return {
             "task_name": result.task_name,
-            "task_dir": result.task_dir,
+            "task_dir": self.display_path(result.task_dir),
             "difficulty": result.difficulty,
             "category": result.category,
             "description": result.description,
@@ -90,12 +139,15 @@ class BenchmarkReportWriter:
             "repair_attempts": result.repair_attempts,
             "total_seconds": result.total_seconds,
             "final_error_type": result.final_error_type,
-            "summary_file": result.summary_file,
-            "log_file": result.log_file,
-            "artifact_dir": result.artifact_dir,
-            "final_patch_file": result.final_patch_file,
+            "summary_file": self.display_path(result.summary_file),
+            "log_file": self.display_path(result.log_file),
+            "artifact_dir": self.display_path(result.artifact_dir),
+            "final_patch_file": self.display_path(result.final_patch_file),
             "changed_files": result.changed_files,
-            "patch_files": result.patch_files
+            "patch_files": [
+                self.display_path(patch_file)
+                for patch_file in result.patch_files
+            ]
         }
 
     def group_stats(self, results, field_name):
@@ -158,7 +210,7 @@ class BenchmarkReportWriter:
             for result in results:
                 writer.writerow([
                     result.task_name,
-                    result.task_dir,
+                    self.display_path(result.task_dir),
                     result.difficulty,
                     result.category,
                     result.expected_error_type,
@@ -169,12 +221,12 @@ class BenchmarkReportWriter:
                     result.repair_attempts,
                     result.total_seconds,
                     result.final_error_type,
-                    result.summary_file,
-                    result.log_file,
-                    result.artifact_dir,
-                    result.final_patch_file,
+                    self.display_path(result.summary_file),
+                    self.display_path(result.log_file),
+                    self.display_path(result.artifact_dir),
+                    self.display_path(result.final_patch_file),
                     ";".join(result.changed_files),
-                    ";".join(result.patch_files)
+                    ";".join(self.display_path(patch_file) for patch_file in result.patch_files)
                 ])
 
     def write_markdown(self, markdown_file, data, json_file, csv_file):
@@ -187,6 +239,7 @@ class BenchmarkReportWriter:
 
         self.append_run_configuration(lines, data)
         self.append_summary(lines, data)
+        self.append_validity_section(lines, data)
         self.append_group_section(lines, "Results by Difficulty", data["by_difficulty"])
         self.append_group_section(lines, "Results by Category", data["by_category"])
         self.append_task_table(lines, data["tasks"])
@@ -198,6 +251,55 @@ class BenchmarkReportWriter:
             "\n".join(lines) + "\n",
             encoding="utf-8"
         )
+    
+    def append_validity_section(self, lines, data):
+        validity = data["validity"]
+
+        lines.append("## Benchmark Validity")
+        lines.append("")
+        lines.append("| Check | Value |")
+        lines.append("|---|---:|")
+        lines.append(f"| Baseline failures detected | {validity['baseline_failures_detected']} / {validity['total_tasks']} |")
+        lines.append(f"| Baseline unexpected successes | {validity['baseline_unexpected_successes']} |")
+        lines.append(f"| Expected error type mismatches | {len(validity['expected_error_type_mismatches'])} |")
+        lines.append(f"| Solved tasks with no changed files | {len(validity['solved_without_changed_files'])} |")
+        lines.append(f"| Crashed tasks | {len(validity['crashed_tasks'])} |")
+        lines.append(f"| Valid for basic repair claim | {self.md_cell(validity['valid_for_basic_repair_claim'])} |")
+        lines.append("")
+
+        if validity["expected_error_type_mismatches"]:
+            lines.append("### Expected Error Type Mismatches")
+            lines.append("")
+            lines.append("| Task | Expected | Actual |")
+            lines.append("|---|---|---|")
+
+            for mismatch in validity["expected_error_type_mismatches"]:
+                lines.append(
+                    "| "
+                    f"{self.md_cell(mismatch['task_name'])} | "
+                    f"{self.md_cell(mismatch['expected'])} | "
+                    f"{self.md_cell(mismatch['actual'])} |"
+                )
+
+            lines.append("")
+
+        if validity["baseline_unexpected_successes"]:
+            lines.append("### Baseline Unexpected Successes")
+            lines.append("")
+
+            for task_name in validity["baseline_unexpected_successes"]:
+                lines.append(f"- `{self.escape_backticks(task_name)}`")
+
+            lines.append("")
+
+        if validity["crashed_tasks"]:
+            lines.append("### Crashed Tasks")
+            lines.append("")
+
+            for task_name in validity["crashed_tasks"]:
+                lines.append(f"- `{self.escape_backticks(task_name)}`")
+
+            lines.append("")
 
     def append_run_configuration(self, lines, data):
         lines.append("## Run Configuration")

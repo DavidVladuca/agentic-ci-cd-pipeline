@@ -191,7 +191,8 @@ def main(argv=None):
 
         error_summary = ErrorExtractor.extract_errors(
             raw_output=result.combined_output,
-            timed_out=result.timed_out
+            timed_out=result.timed_out,
+            timeout_seconds=config.docker_timeout_seconds
         )
 
         error_type = ErrorExtractor.classify_error(

@@ -8,15 +8,26 @@ class SourceContextBuilder:
         self.max_chars = max_chars
 
     # make one combined context string from selected sandbox files
-    def build(self, sandbox_root, selected_paths=None):
+    def build(self, sandbox_root, selected_paths=None, hidden_test_paths=None):
         sandbox_root = Path(sandbox_root).resolve()
+        hidden_test_paths = self.normalize_hidden_test_paths(hidden_test_paths)
 
         if selected_paths is None:
             files = []
             files.extend(self.collect_files(sandbox_root / "src" / "main" / "java"))
-            files.extend(self.collect_public_test_files(sandbox_root / "src" / "test" / "java"))
+            files.extend(
+                self.collect_public_test_files(
+                    directory=sandbox_root / "src" / "test" / "java",
+                    sandbox_root=sandbox_root,
+                    hidden_test_paths=hidden_test_paths
+                )
+            )
         else:
-            files = self.resolve_selected_files(sandbox_root, selected_paths)
+            files = self.resolve_selected_files(
+                sandbox_root=sandbox_root,
+                selected_paths=selected_paths,
+                hidden_test_paths=hidden_test_paths
+            )
 
         if not files:
             raise RuntimeError(f"No Java source files selected for context in sandbox: {sandbox_root}")
@@ -54,7 +65,7 @@ class SourceContextBuilder:
 
         return "\n\n---\n\n".join(sections)
 
-    def resolve_selected_files(self, sandbox_root, selected_paths):
+    def resolve_selected_files(self, sandbox_root, selected_paths, hidden_test_paths):
         files = []
 
         for selected_path in selected_paths:
@@ -77,6 +88,10 @@ class SourceContextBuilder:
             if not path_text.endswith(".java"):
                 raise RuntimeError(f"Selected context path is not a Java file: {selected_path}")
 
+            if path_text in hidden_test_paths:
+                continue
+
+            # Legacy safety fallback.
             if path_text.startswith("src/test/java/") and "hidden" in relative_path.name.lower():
                 continue
 
@@ -108,7 +123,7 @@ class SourceContextBuilder:
             if path.is_file()
         )
 
-    def collect_public_test_files(self, directory):
+    def collect_public_test_files(self, directory, sandbox_root, hidden_test_paths):
         directory = Path(directory)
 
         if not directory.exists():
@@ -120,9 +135,25 @@ class SourceContextBuilder:
             if not path.is_file():
                 continue
 
+            relative_path = path.relative_to(sandbox_root).as_posix()
+
+            if relative_path in hidden_test_paths:
+                continue
+
+            # Legacy safety fallback.
             if "hidden" in path.name.lower():
                 continue
 
             files.append(path)
 
         return sorted(files)
+
+    @staticmethod
+    def normalize_hidden_test_paths(hidden_test_paths):
+        if hidden_test_paths is None:
+            return set()
+
+        return {
+            str(path).replace("\\", "/")
+            for path in hidden_test_paths
+        }

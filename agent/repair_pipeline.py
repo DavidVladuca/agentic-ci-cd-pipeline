@@ -82,11 +82,15 @@ class RepairPipeline:
         final_patch_file = None
 
         sandbox = ProjectSandbox(self.project_root)
-        sandbox_root = sandbox.prepare_task(repair_task)
+        sandbox_result = sandbox.prepare_task(repair_task)
+
+        sandbox_root = sandbox_result.sandbox_root
+        hidden_test_paths = sandbox_result.hidden_test_paths
 
         initial_snapshot = self.diff_tracker.snapshot_production_files(sandbox_root)
 
         self.logger.info("[REPAIR] Sandbox root: %s", sandbox_root)
+        self.logger.info("[REPAIR] Hidden test files tracked: %s", len(hidden_test_paths))
 
         if repair_task.hidden_tests_dir is None:
             self.logger.info("[REPAIR] No hidden tests directory provided.")
@@ -141,7 +145,8 @@ class RepairPipeline:
 
         baseline_error_summary = ErrorExtractor.extract_errors(
             raw_output=baseline_result.combined_output,
-            timed_out=baseline_result.timed_out
+            timed_out=baseline_result.timed_out,
+            timeout_seconds=self.timeout_seconds
         )
 
         baseline_error_type = ErrorExtractor.classify_error(
@@ -207,7 +212,10 @@ class RepairPipeline:
             self.logger.info("[REPAIR] Repair attempt %s/%s", attempt, self.max_attempts)
 
             try:
-                project_analysis = project_analyzer.analyze(sandbox_root)
+                project_analysis = project_analyzer.analyze(
+                    sandbox_root=sandbox_root,
+                    hidden_test_paths=hidden_test_paths
+                )
 
                 file_selection = file_selector.select(
                     analysis=project_analysis,
@@ -233,7 +241,8 @@ class RepairPipeline:
 
                 source_context = source_context_builder.build(
                     sandbox_root=sandbox_root,
-                    selected_paths=file_selection.selected_paths
+                    selected_paths=file_selection.selected_paths,
+                    hidden_test_paths=hidden_test_paths
                 )
 
                 self.logger.info("[REPAIR] Source context length: %s characters", len(source_context))
@@ -401,7 +410,8 @@ class RepairPipeline:
 
             error_summary = ErrorExtractor.extract_errors(
                 raw_output=result.combined_output,
-                timed_out=result.timed_out
+                timed_out=result.timed_out,
+                timeout_seconds=self.timeout_seconds
             )
 
             error_type = ErrorExtractor.classify_error(
