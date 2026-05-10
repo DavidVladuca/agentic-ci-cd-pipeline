@@ -1,12 +1,26 @@
 from pathlib import Path
 import shutil
 
+
 # copies the broken Java project into the repair sandbox
-# and then inject hidden tests if they exist
+# and then injects hidden tests if they exist
 class ProjectSandbox:
     def __init__(self, project_root):
         self.project_root = Path(project_root)
         self.base_dir = self.project_root / ".sandbox" / "repair_workspace"
+
+        self.ignored_project_names = {
+            ".git",
+            "target",
+            ".idea",
+            ".vscode",
+            "__pycache__",
+            ".pytest_cache",
+            "logs",
+            "reports",
+            "artifacts",
+            ".sandbox"
+        }
 
     def prepare_task(self, repair_task):
         sandbox_root = self.base_dir / repair_task.name
@@ -14,7 +28,11 @@ class ProjectSandbox:
         if sandbox_root.exists():
             shutil.rmtree(sandbox_root)
 
-        shutil.copytree(repair_task.project_dir, sandbox_root)
+        shutil.copytree(
+            repair_task.project_dir,
+            sandbox_root,
+            ignore=self.ignore_project_noise
+        )
 
         if repair_task.hidden_tests_dir is not None:
             self.copy_tree_contents(
@@ -23,6 +41,15 @@ class ProjectSandbox:
             )
 
         return sandbox_root
+
+    def ignore_project_noise(self, directory, names):
+        ignored = set()
+
+        for name in names:
+            if name in self.ignored_project_names:
+                ignored.add(name)
+
+        return ignored
 
     def copy_tree_contents(self, source_dir, target_dir):
         source_dir = Path(source_dir)

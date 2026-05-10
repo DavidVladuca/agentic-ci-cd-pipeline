@@ -8,6 +8,7 @@ from agent.config import (
     DEFAULT_DOCKER_TIMEOUT_SECONDS
 )
 from agent.logger_config import setup_logger
+from agent.project_importer import ProjectImporter
 from agent.repair_pipeline import RepairPipeline
 from agent.repair_task import RepairTask
 
@@ -15,13 +16,28 @@ from agent.repair_task import RepairTask
 # parses commandline arguments for real-project repair mode
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
-        description="Repair an arbitrary Java Maven project using the local repair agent."
+        description="Repair a Java Maven project using the local repair agent."
     )
 
-    parser.add_argument(
+    input_group = parser.add_mutually_exclusive_group(required=True)
+
+    input_group.add_argument(
         "--project-dir",
-        required=True,
-        help="Path to the Maven project directory to repair."
+        default=None,
+        help="Path to a local Maven project directory to repair."
+    )
+
+    input_group.add_argument(
+        "--zip",
+        dest="zip_file",
+        default=None,
+        help="Path to a zip file containing a Maven project."
+    )
+
+    input_group.add_argument(
+        "--git-url",
+        default=None,
+        help="HTTPS GitHub repository URL to clone and repair."
     )
 
     parser.add_argument(
@@ -39,7 +55,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "--name",
         default=None,
-        help="Optional repair run name. Defaults to the project directory name."
+        help="Optional repair run name. Defaults to the project/repo/zip name."
     )
 
     parser.add_argument(
@@ -86,7 +102,7 @@ def main(argv=None):
     # __file__ = path of current file (repair_project.py), resolve() = absolute path
     project_root = Path(__file__).resolve().parents[1]
 
-    # if path is wrong, kill it imediatly
+    # if path is wrong, kill it immediately
     if not (project_root / "pom.xml").exists():
         raise RuntimeError(f"Could not find agent project root pom.xml: {project_root}")
 
@@ -95,7 +111,9 @@ def main(argv=None):
 
     logger.info("[PROJECT_REPAIR] Starting real-project repair run")
     logger.info("[PROJECT_REPAIR] Agent project root: %s", project_root)
-    logger.info("[PROJECT_REPAIR] Target project dir: %s", args.project_dir)
+    logger.info("[PROJECT_REPAIR] Local project dir: %s", args.project_dir)
+    logger.info("[PROJECT_REPAIR] Zip file: %s", args.zip_file)
+    logger.info("[PROJECT_REPAIR] Git URL: %s", args.git_url)
     logger.info("[PROJECT_REPAIR] Task file: %s", args.task_file)
     logger.info("[PROJECT_REPAIR] Hidden tests dir: %s", args.hidden_tests_dir)
     logger.info("[PROJECT_REPAIR] Model: %s", args.model)
@@ -104,11 +122,26 @@ def main(argv=None):
     logger.info("[PROJECT_REPAIR] Docker/Maven timeout: %s seconds", args.timeout)
     logger.info("[PROJECT_REPAIR] Log file: %s", log_file)
 
-    repair_task = RepairTask.from_project(
+    importer = ProjectImporter(project_root)
+
+    import_result = importer.import_project(
         project_dir=args.project_dir,
+        zip_file=args.zip_file,
+        git_url=args.git_url,
+        name=args.name
+    )
+
+    logger.info("[PROJECT_REPAIR] Imported source type: %s", import_result.source_type)
+    logger.info("[PROJECT_REPAIR] Imported source: %s", import_result.source)
+    logger.info("[PROJECT_REPAIR] Import root: %s", import_result.import_root)
+    logger.info("[PROJECT_REPAIR] Maven project dir: %s", import_result.project_dir)
+    logger.info("[PROJECT_REPAIR] Repair run name: %s", import_result.run_name)
+
+    repair_task = RepairTask.from_project(
+        project_dir=import_result.project_dir,
         task_file=args.task_file,
         hidden_tests_dir=args.hidden_tests_dir,
-        name=args.name
+        name=import_result.run_name
     )
 
     pipeline = RepairPipeline(
