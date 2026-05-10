@@ -11,6 +11,8 @@ from agent.project_sandbox import ProjectSandbox
 from agent.repair_task import RepairTask
 from agent.run_metrics import RunMetrics
 from agent.source_context import SourceContextBuilder
+from agent.project_analyzer import ProjectAnalyzer
+from agent.file_selector import FileSelector
 
 
 @dataclass
@@ -99,6 +101,8 @@ class RepairPipeline:
 
         llm = LLMClient(model=self.model)
         source_context_builder = SourceContextBuilder()
+        project_analyzer = ProjectAnalyzer()
+        file_selector = FileSelector(max_context_chars=source_context_builder.max_chars)
         file_rewriter = FileRewriter(sandbox_root)
 
         self.logger.info("[REPAIR] Running baseline Maven/JUnit tests inside Docker...")
@@ -203,7 +207,35 @@ class RepairPipeline:
             self.logger.info("[REPAIR] Repair attempt %s/%s", attempt, self.max_attempts)
 
             try:
-                source_context = source_context_builder.build(sandbox_root)
+                project_analysis = project_analyzer.analyze(sandbox_root)
+
+                file_selection = file_selector.select(
+                    analysis=project_analysis,
+                    task_prompt=repair_task.prompt,
+                    error_summary=last_error_summary
+                )
+
+                self.logger.info(
+                    "[REPAIR] Selected %s context files, estimated context size: %s characters",
+                    len(file_selection.selected_paths),
+                    file_selection.estimated_chars
+                )
+
+                for selected_path in file_selection.selected_paths:
+                    reasons = file_selection.reasons_by_path.get(selected_path, [])
+                    reason_text = "; ".join(reasons) if reasons else "no reason recorded"
+
+                    self.logger.info(
+                        "[REPAIR] Context file selected: %s | %s",
+                        selected_path,
+                        reason_text
+                    )
+
+                source_context = source_context_builder.build(
+                    sandbox_root=sandbox_root,
+                    selected_paths=file_selection.selected_paths
+                )
+
                 self.logger.info("[REPAIR] Source context length: %s characters", len(source_context))
 
                 self.logger.info("[REPAIR] Calling LLM for repair file edits...")

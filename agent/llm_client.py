@@ -164,8 +164,9 @@ class LLMClient:
                 - do not modify tests
                 - do not modify pom.xml
                 - do not create new files
-                - do not add package declarations
-                - keep all classes in the default package
+                - preserve existing package declarations exactly when a file already has one
+                - do not add a package declaration to a file that did not already have one
+                - preserve existing public class names and file names
                 - produce Java 17 compatible code
 
                 Repair task:
@@ -193,6 +194,7 @@ class LLMClient:
                 - path must be the exact relative path shown after FILE:
                 - path must be under src/main/java/
                 - path must refer to an existing production Java file
+                - path may include package directories under src/main/java/
                 - content must contain the full corrected Java file content
                 - do not modify files under src/test/java/
                 - do not modify hidden tests

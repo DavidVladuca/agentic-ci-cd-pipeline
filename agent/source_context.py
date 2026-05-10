@@ -1,39 +1,101 @@
 from pathlib import Path
 
-# reads source files from the repair sandbox and builds context for the LLM
+
+# reads selected source files from the repair sandbox and builds context for the LLM
 # hidden test source files are not included
 class SourceContextBuilder:
     def __init__(self, max_chars=12000):
         self.max_chars = max_chars
 
-    # make one combined context string from sandbox files
-    def build(self, sandbox_root):
-        sandbox_root = Path(sandbox_root)
-        files = []
+    # make one combined context string from selected sandbox files
+    def build(self, sandbox_root, selected_paths=None):
+        sandbox_root = Path(sandbox_root).resolve()
 
-        files.extend(self.collect_files(sandbox_root / "src" / "main" / "java"))
-        files.extend(self.collect_public_test_files(sandbox_root / "src" / "test" / "java"))
+        if selected_paths is None:
+            files = []
+            files.extend(self.collect_files(sandbox_root / "src" / "main" / "java"))
+            files.extend(self.collect_public_test_files(sandbox_root / "src" / "test" / "java"))
+        else:
+            files = self.resolve_selected_files(sandbox_root, selected_paths)
 
         if not files:
-            raise RuntimeError(f"No Java source files found in sandbox: {sandbox_root}")
+            raise RuntimeError(f"No Java source files selected for context in sandbox: {sandbox_root}")
 
         sections = []
+        total_chars = 0
 
         for file_path in files:
             relative_path = file_path.relative_to(sandbox_root).as_posix()
             content = file_path.read_text(encoding="utf-8", errors="replace")
 
+            section = (
+                f"FILE: {relative_path}\n"
+                f"{content}"
+            )
+
+            section_cost = len(section) + 8
+
+            if sections and total_chars + section_cost > self.max_chars:
+                continue
+
+            sections.append(section)
+            total_chars += section_cost
+
+        # If the selected file is larger than the budget, include it anyway.
+        # Truncating Java source can make the model return broken full-file rewrites.
+        if not sections:
+            file_path = files[0]
+            relative_path = file_path.relative_to(sandbox_root).as_posix()
+            content = file_path.read_text(encoding="utf-8", errors="replace")
             sections.append(
                 f"FILE: {relative_path}\n"
                 f"{content}"
             )
 
-        context = "\n\n---\n\n".join(sections)
+        return "\n\n---\n\n".join(sections)
 
-        if len(context) > self.max_chars:
-            context = context[-self.max_chars:]
+    def resolve_selected_files(self, sandbox_root, selected_paths):
+        files = []
 
-        return context
+        for selected_path in selected_paths:
+            relative_path = Path(selected_path)
+
+            if relative_path.is_absolute():
+                raise RuntimeError(f"Selected context path must be relative: {selected_path}")
+
+            if ".." in relative_path.parts:
+                raise RuntimeError(f"Selected context path escapes sandbox: {selected_path}")
+
+            path_text = relative_path.as_posix()
+
+            if not (
+                path_text.startswith("src/main/java/")
+                or path_text.startswith("src/test/java/")
+            ):
+                raise RuntimeError(f"Selected context path is not a Java source/test path: {selected_path}")
+
+            if not path_text.endswith(".java"):
+                raise RuntimeError(f"Selected context path is not a Java file: {selected_path}")
+
+            if path_text.startswith("src/test/java/") and "hidden" in relative_path.name.lower():
+                continue
+
+            absolute_path = (sandbox_root / relative_path).resolve()
+
+            try:
+                absolute_path.relative_to(sandbox_root)
+            except ValueError as e:
+                raise RuntimeError(f"Selected context path escapes sandbox: {selected_path}") from e
+
+            if not absolute_path.exists():
+                raise RuntimeError(f"Selected context file does not exist: {selected_path}")
+
+            if not absolute_path.is_file():
+                raise RuntimeError(f"Selected context path is not a file: {selected_path}")
+
+            files.append(absolute_path)
+
+        return files
 
     def collect_files(self, directory):
         directory = Path(directory)
@@ -58,9 +120,7 @@ class SourceContextBuilder:
             if not path.is_file():
                 continue
 
-            name = path.name.lower()
-
-            if "hidden" in name:
+            if "hidden" in path.name.lower():
                 continue
 
             files.append(path)
