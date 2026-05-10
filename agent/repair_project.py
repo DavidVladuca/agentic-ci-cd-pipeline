@@ -8,12 +8,10 @@ from agent.config import (
     DEFAULT_DOCKER_TIMEOUT_SECONDS
 )
 from agent.logger_config import setup_logger
-from agent.project_importer import ProjectImporter
-from agent.repair_pipeline import RepairPipeline
-from agent.repair_task import RepairTask
+from agent.project_repair_workflow import ProjectRepairWorkflow
 
 
-# parses commandline arguments for real-project repair mode
+# parses commandline arguments for whole-project repair mode
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description="Repair a Java Maven project using the local repair agent."
@@ -95,21 +93,18 @@ def parse_args(argv=None):
     return args
 
 
-# real-project repair entry point
+# whole-project repair entry point
 def main(argv=None):
     args = parse_args(argv)
 
-    # __file__ = path of current file (repair_project.py), resolve() = absolute path
     project_root = Path(__file__).resolve().parents[1]
 
-    # if path is wrong, kill it immediately
     if not (project_root / "pom.xml").exists():
         raise RuntimeError(f"Could not find agent project root pom.xml: {project_root}")
 
-    # setup logger
     logger, log_file = setup_logger(project_root)
 
-    logger.info("[PROJECT_REPAIR] Starting real-project repair run")
+    logger.info("[PROJECT_REPAIR] Starting whole-project repair run")
     logger.info("[PROJECT_REPAIR] Agent project root: %s", project_root)
     logger.info("[PROJECT_REPAIR] Local project dir: %s", args.project_dir)
     logger.info("[PROJECT_REPAIR] Zip file: %s", args.zip_file)
@@ -122,29 +117,7 @@ def main(argv=None):
     logger.info("[PROJECT_REPAIR] Docker/Maven timeout: %s seconds", args.timeout)
     logger.info("[PROJECT_REPAIR] Log file: %s", log_file)
 
-    importer = ProjectImporter(project_root)
-
-    import_result = importer.import_project(
-        project_dir=args.project_dir,
-        zip_file=args.zip_file,
-        git_url=args.git_url,
-        name=args.name
-    )
-
-    logger.info("[PROJECT_REPAIR] Imported source type: %s", import_result.source_type)
-    logger.info("[PROJECT_REPAIR] Imported source: %s", import_result.source)
-    logger.info("[PROJECT_REPAIR] Import root: %s", import_result.import_root)
-    logger.info("[PROJECT_REPAIR] Maven project dir: %s", import_result.project_dir)
-    logger.info("[PROJECT_REPAIR] Repair run name: %s", import_result.run_name)
-
-    repair_task = RepairTask.from_project(
-        project_dir=import_result.project_dir,
-        task_file=args.task_file,
-        hidden_tests_dir=args.hidden_tests_dir,
-        name=import_result.run_name
-    )
-
-    pipeline = RepairPipeline(
+    workflow = ProjectRepairWorkflow(
         project_root=project_root,
         logger=logger,
         log_file=log_file,
@@ -154,12 +127,22 @@ def main(argv=None):
         timeout_seconds=args.timeout
     )
 
-    result = pipeline.run_repair_task(repair_task)
+    workflow_result = workflow.run(
+        project_dir=args.project_dir,
+        zip_file=args.zip_file,
+        git_url=args.git_url,
+        task_file=args.task_file,
+        hidden_tests_dir=args.hidden_tests_dir,
+        name=args.name
+    )
 
-    logger.info("[PROJECT_REPAIR] Result: %s", result.final_status)
-    logger.info("[PROJECT_REPAIR] Solved: %s", result.solved)
-    logger.info("[PROJECT_REPAIR] Artifact dir: %s", result.artifact_dir)
-    logger.info("[PROJECT_REPAIR] Final patch file: %s", result.final_patch_file)
+    repair_result = workflow_result.repair_result
+
+    logger.info("[PROJECT_REPAIR] Result: %s", repair_result.final_status)
+    logger.info("[PROJECT_REPAIR] Solved: %s", repair_result.solved)
+    logger.info("[PROJECT_REPAIR] Artifact dir: %s", repair_result.artifact_dir)
+    logger.info("[PROJECT_REPAIR] Final patch file: %s", repair_result.final_patch_file)
+    logger.info("[PROJECT_REPAIR] Markdown report: %s", workflow_result.markdown_report)
 
 
 if __name__ == "__main__":
