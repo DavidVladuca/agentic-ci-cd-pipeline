@@ -176,7 +176,7 @@ def main(argv=None):
 
     report_writer = BenchmarkReportWriter(project_root)
 
-    json_file, csv_file = report_writer.write(
+    report_files = report_writer.write(
         results=results,
         config={
             "model": args.model,
@@ -198,8 +198,9 @@ def main(argv=None):
     else:
         logger.info("[BENCHMARK] Pass rate: %.3f", solved / total)
 
-    logger.info("[BENCHMARK] JSON report: %s", json_file)
-    logger.info("[BENCHMARK] CSV report: %s", csv_file)
+    logger.info("[BENCHMARK] JSON report: %s", report_files["json"])
+    logger.info("[BENCHMARK] CSV report: %s", report_files["csv"])
+    logger.info("[BENCHMARK] Markdown report: %s", report_files["markdown"])
 
 
 if __name__ == "__main__":
