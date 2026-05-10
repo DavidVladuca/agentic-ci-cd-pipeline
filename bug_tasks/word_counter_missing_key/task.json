@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "generic-collections",
+  "description": "WordCounter increments missing map entries without initializing them.",
+  "expected_error_type": "TEST_FAILURE"
+}

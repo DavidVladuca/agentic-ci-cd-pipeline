@@ -70,6 +70,7 @@ class BenchmarkReportWriter:
             "validity": self.build_validity_data(results),
             "by_difficulty": self.group_stats(results, "difficulty"),
             "by_category": self.group_stats(results, "category"),
+            "by_baseline_error_type": self.group_stats(results, "baseline_error_type"),
             "tasks": [
                 self.task_to_dict(result)
                 for result in results
@@ -154,7 +155,12 @@ class BenchmarkReportWriter:
         groups = {}
 
         for result in results:
-            key = getattr(result, field_name)
+            raw_key = getattr(result, field_name)
+
+            if raw_key is None:
+                key = "none"
+            else:
+                key = str(raw_key) 
 
             if key not in groups:
                 groups[key] = {
@@ -242,6 +248,7 @@ class BenchmarkReportWriter:
         self.append_validity_section(lines, data)
         self.append_group_section(lines, "Results by Difficulty", data["by_difficulty"])
         self.append_group_section(lines, "Results by Category", data["by_category"])
+        self.append_group_section(lines, "Results by Baseline Error Type", data["by_baseline_error_type"])
         self.append_task_table(lines, data["tasks"])
         self.append_failed_tasks(lines, data["tasks"])
         self.append_changed_files(lines, data["tasks"])

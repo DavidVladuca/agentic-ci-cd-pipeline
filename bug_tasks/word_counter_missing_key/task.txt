@@ -1,0 +1,8 @@
+Repair WordCounter.countWords(String text).
+
+Rules:
+- split text on whitespace
+- ignore leading and trailing whitespace
+- ignore empty input
+- count repeated words correctly
+- return a mutable Map<String, Integer>

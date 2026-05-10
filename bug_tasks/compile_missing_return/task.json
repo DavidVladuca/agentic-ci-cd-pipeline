@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "compilation-error",
+  "description": "Missing return path causes Java compilation failure.",
+  "expected_error_type": "COMPILATION_ERROR"
+}

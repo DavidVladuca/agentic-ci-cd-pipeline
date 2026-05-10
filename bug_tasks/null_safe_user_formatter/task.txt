@@ -1,0 +1,7 @@
+Repair UserFormatter.displayName(User user).
+
+Rules:
+- return the user's name trimmed and uppercased
+- return "UNKNOWN" when the user is null
+- return "UNKNOWN" when the user's name is null
+- return "UNKNOWN" when the trimmed name is empty

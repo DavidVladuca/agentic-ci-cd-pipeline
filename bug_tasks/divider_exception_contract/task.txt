@@ -1,0 +1,6 @@
+Repair Divider.divide(int numerator, int denominator).
+
+Rules:
+- return integer division result for valid denominators
+- throw IllegalArgumentException when denominator is zero
+- do not silently return 0 for division by zero

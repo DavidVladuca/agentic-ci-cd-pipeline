@@ -1,0 +1,8 @@
+Repair shop.Inventory.reserve(String sku, int quantity).
+
+Rules:
+- reserve should return true only when the item exists and enough stock is available
+- reserving exactly the available quantity must succeed
+- successful reserve decreases stock by the reserved quantity
+- quantity must be positive
+- unknown SKU must return false

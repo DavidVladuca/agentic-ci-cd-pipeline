@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "null-handling",
+  "description": "Formatter does not handle null users, null names, or blank names.",
+  "expected_error_type": "TEST_FAILURE"
+}

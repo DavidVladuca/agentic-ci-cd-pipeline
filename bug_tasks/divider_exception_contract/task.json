@@ -1,0 +1,6 @@
+{
+  "difficulty": "easy",
+  "category": "exception-contract",
+  "description": "Divider violates the API contract by returning 0 instead of throwing on division by zero.",
+  "expected_error_type": "TEST_FAILURE"
+}

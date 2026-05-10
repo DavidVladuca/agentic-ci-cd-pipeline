@@ -1,0 +1,6 @@
+{
+  "difficulty": "hard",
+  "category": "package-based-stateful-logic",
+  "description": "Package-based Inventory reserve logic rejects exact stock reservations and mishandles invalid quantities.",
+  "expected_error_type": "TEST_FAILURE"
+}

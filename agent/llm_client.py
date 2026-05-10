@@ -110,6 +110,17 @@ class LLMClient:
                 {self.common_code_generation_rules()}
                 """.strip()
 
+    def java_repair_safety_rules(self):
+        return """
+                Java source correctness rules:
+                - content must be valid Java source after JSON decoding.
+                - Java string literals must remain quoted.
+                - Java regex backslashes must be escaped inside Java strings.
+                - for whitespace splitting, the Java source must contain: split("\\\\s+")
+                - never write invalid Java such as split(\\s+).
+                - if Maven reports "illegal character: '\\'", check for an unquoted or incorrectly escaped backslash.
+                """.strip()
+
     # these are shared rules for V1 code-generation mode
     def common_code_generation_rules(self):
         return """
@@ -177,6 +188,8 @@ class LLMClient:
 
                 Latest Maven/JUnit failure:
                 {previous_error}
+                
+                {self.java_repair_safety_rules()}
 
                 Return only a raw JSON object.
 
@@ -193,6 +206,11 @@ class LLMClient:
                 - return only files that need to be changed
                 - path must be the exact relative path shown after FILE:
                 - path must be under src/main/java/
+                - content must be valid Java source after JSON decoding
+                - Java string literals must remain quoted
+                - Java regex backslashes must be escaped inside Java strings
+                - for whitespace splitting, the Java source must contain: split("\\\\s+")
+                - never write invalid Java such as split(\\s+)
                 - path must refer to an existing production Java file
                 - path may include package directories under src/main/java/
                 - content must contain the full corrected Java file content

@@ -1,0 +1,6 @@
+Repair App.sign(int value).
+
+Rules:
+- return "positive" when value is greater than 0
+- return "negative" when value is less than 0
+- return "zero" when value is 0
