@@ -5,7 +5,8 @@ from agent.config import (
     DEFAULT_MODEL,
     DEFAULT_MAX_ATTEMPTS,
     DEFAULT_DOCKER_IMAGE,
-    DEFAULT_DOCKER_TIMEOUT_SECONDS
+    DEFAULT_DOCKER_TIMEOUT_SECONDS, 
+    DEFAULT_DEPENDENCY_TIMEOUT_SECONDS
 )
 from agent.logger_config import setup_logger
 from agent.project_repair_workflow import ProjectRepairWorkflow
@@ -51,6 +52,15 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
+        "--prepare-deps",
+        action="store_true",
+        help=(
+            "Run an online Maven dependency prefetch before offline repair attempts. "
+            "Useful for real Maven projects with dependencies not cached in the Docker image."
+        )
+    )
+
+    parser.add_argument(
         "--name",
         default=None,
         help="Optional repair run name. Defaults to the project/repo/zip name."
@@ -82,7 +92,17 @@ def parse_args(argv=None):
         help=f"Docker/Maven timeout in seconds. Default: {DEFAULT_DOCKER_TIMEOUT_SECONDS}"
     )
 
+    parser.add_argument(
+        "--dependency-timeout",
+        type=int,
+        default=DEFAULT_DEPENDENCY_TIMEOUT_SECONDS,
+        help=f"Dependency prefetch timeout in seconds. Default: {DEFAULT_DEPENDENCY_TIMEOUT_SECONDS}"
+    )
+
     args = parser.parse_args(argv)
+
+    if args.dependency_timeout < 1:
+        parser.error("--dependency-timeout must be at least 1")
 
     if args.max_attempts < 1:
         parser.error("--max-attempts must be at least 1")
@@ -111,6 +131,7 @@ def main(argv=None):
     logger.info("[PROJECT_REPAIR] Git URL: %s", args.git_url)
     logger.info("[PROJECT_REPAIR] Task file: %s", args.task_file)
     logger.info("[PROJECT_REPAIR] Hidden tests dir: %s", args.hidden_tests_dir)
+    logger.info("[PROJECT_REPAIR] Prepare dependencies: %s", args.prepare_deps)
     logger.info("[PROJECT_REPAIR] Model: %s", args.model)
     logger.info("[PROJECT_REPAIR] Max attempts: %s", args.max_attempts)
     logger.info("[PROJECT_REPAIR] Docker image: %s", args.docker_image)
@@ -124,7 +145,9 @@ def main(argv=None):
         model=args.model,
         max_attempts=args.max_attempts,
         docker_image=args.docker_image,
-        timeout_seconds=args.timeout
+        timeout_seconds=args.timeout,
+        dependency_timeout_seconds=args.dependency_timeout,
+        prepare_dependencies=args.prepare_deps
     )
 
     workflow_result = workflow.run(

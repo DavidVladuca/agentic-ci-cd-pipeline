@@ -4,6 +4,7 @@ DEFAULT_MODEL = "agent-coder"
 DEFAULT_MAX_ATTEMPTS = 5
 DEFAULT_DOCKER_IMAGE = "agent-pipeline-java"
 DEFAULT_DOCKER_TIMEOUT_SECONDS = 30
+DEFAULT_DEPENDENCY_TIMEOUT_SECONDS = 180
 
 DEFAULT_TASK_PROMPT = """
 Create a Java class App with a static method add(int a, int b) that returns the sum.

@@ -48,7 +48,10 @@ class RepairPipeline:
         model,
         max_attempts,
         docker_image,
-        timeout_seconds
+        timeout_seconds,
+        prepare_dependencies=False,
+        maven_repo_host_dir=None,
+        dependency_timeout_seconds=180
     ):
         self.project_root = Path(project_root)
         self.logger = logger
@@ -58,6 +61,9 @@ class RepairPipeline:
         self.docker_image = docker_image
         self.timeout_seconds = timeout_seconds
         self.diff_tracker = DiffTracker(self.project_root)
+        self.prepare_dependencies = prepare_dependencies
+        self.maven_repo_host_dir = Path(maven_repo_host_dir).resolve() if maven_repo_host_dir else None
+        self.dependency_timeout_seconds = dependency_timeout_seconds
 
     def run_task(self, task_dir):
         repair_task = RepairTask.load(task_dir)
@@ -96,11 +102,88 @@ class RepairPipeline:
             self.logger.info("[REPAIR] No hidden tests directory provided.")
         else:
             self.logger.info("[REPAIR] Hidden tests injected from: %s", repair_task.hidden_tests_dir)
+        
+        maven_repo_host_dir = self.maven_repo_host_dir
+
+        if self.prepare_dependencies:
+            if maven_repo_host_dir is None:
+                maven_repo_host_dir = (
+                    self.project_root
+                    / ".sandbox"
+                    / "maven_repos"
+                    / repair_task.name
+                )
+
+            self.logger.info("[REPAIR] Preparing Maven dependencies with network enabled...")
+            self.logger.info("[REPAIR] Maven dependency cache: %s", maven_repo_host_dir)
+
+            prefetch_runner = DockerRunner(
+                sandbox_root=sandbox_root,
+                image_name=self.docker_image,
+                timeout_seconds=self.dependency_timeout_seconds,
+                maven_repo_host_dir=maven_repo_host_dir,
+                offline=False,
+                network_enabled=True
+            )
+
+            prefetch_result = prefetch_runner.run_dependency_prefetch()
+
+            self.logger.info(
+                "[REPAIR] Dependency prefetch exit code: %s",
+                prefetch_result.exit_code
+            )
+            self.logger.info(
+                "[TIMING] Dependency prefetch took %.3f seconds",
+                prefetch_result.duration_seconds
+            )
+
+            if not prefetch_result.success:
+                error_summary = ErrorExtractor.extract_errors(
+                    raw_output=prefetch_result.combined_output,
+                    timed_out=prefetch_result.timed_out,
+                    timeout_seconds=self.timeout_seconds
+                )
+
+                error_type = ErrorExtractor.classify_error(
+                    error_summary=error_summary,
+                    timed_out=prefetch_result.timed_out
+                )
+
+                self.logger.error("[REPAIR] Dependency prefetch failed.")
+                self.logger.error(error_summary)
+                self.logger.info("[REPAIR] Error type: %s", error_type)
+
+                metrics.add_attempt(
+                    attempt=0,
+                    status="DEPENDENCY_PREFETCH_FAILED",
+                    llm_seconds=0.0,
+                    workspace_seconds=0.0,
+                    maven_seconds=prefetch_result.duration_seconds,
+                    attempt_seconds=prefetch_result.duration_seconds,
+                    exit_code=prefetch_result.exit_code,
+                    error_type=error_type,
+                    error_summary=error_summary
+                )
+
+                return self.finish_run(
+                    repair_task=repair_task,
+                    metrics=metrics,
+                    final_status="FAILED_DEPENDENCY_PREFETCH",
+                    baseline_status="DEPENDENCY_PREFETCH_FAILED",
+                    baseline_error_type=error_type,
+                    artifact_dir=str(task_artifact_dir),
+                    final_patch_file=final_patch_file,
+                    changed_files=all_changed_files,
+                    patch_files=all_patch_files
+                )
 
         runner = DockerRunner(
             sandbox_root=sandbox_root,
             image_name=self.docker_image,
-            timeout_seconds=self.timeout_seconds
+            timeout_seconds=self.timeout_seconds,
+            maven_repo_host_dir=maven_repo_host_dir,
+            offline=True,
+            network_enabled=False
         )
 
         llm = LLMClient(model=self.model)
@@ -180,7 +263,13 @@ class RepairPipeline:
             error_summary=baseline_error_summary
         )
 
-        if baseline_error_type in {"DEPENDENCY_RESOLUTION_ERROR", "DOCKER_ERROR", "SANDBOX_ERROR", "TIMEOUT"}:
+        if baseline_error_type in {
+            "DEPENDENCY_RESOLUTION_ERROR",
+            "DOCKER_ERROR",
+            "SANDBOX_ERROR",
+            "TIMEOUT",
+            "JAVA_VERSION_ERROR"
+        }:
             self.logger.error("[REPAIR] Baseline failed because of infrastructure, not project code. Stopping before LLM repair.")
 
             return self.finish_run(

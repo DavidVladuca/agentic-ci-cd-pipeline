@@ -2,8 +2,9 @@ from pathlib import Path
 import subprocess
 import time
 
+
 # runs Maven inside Docker
-# controller.py should not execute generated or repaired Java directly on the host machine
+# controller.py / repair_pipeline.py should not execute generated or repaired Java directly on the host machine
 class DockerResult:
     def __init__(self, exit_code, stdout, stderr, timed_out, duration_seconds=0.0):
         self.exit_code = exit_code
@@ -22,10 +23,27 @@ class DockerResult:
 
 
 class DockerRunner:
-    def __init__(self, sandbox_root, image_name="agent-pipeline-java", timeout_seconds=30):
+    def __init__(
+        self,
+        sandbox_root,
+        image_name="agent-pipeline-java",
+        timeout_seconds=30,
+        maven_repo_host_dir=None,
+        offline=True,
+        network_enabled=False
+    ):
         self.sandbox_root = Path(sandbox_root).resolve()
         self.image_name = image_name
-        self.timeout_seconds = timeout_seconds # higher timeout on Docker since it is slower
+        self.timeout_seconds = timeout_seconds
+
+        self.maven_repo_host_dir = (
+            Path(maven_repo_host_dir).resolve()
+            if maven_repo_host_dir is not None
+            else None
+        )
+
+        self.offline = offline
+        self.network_enabled = network_enabled
 
         # sandbox policy
         self.container_user = "10001:10001"
@@ -33,56 +51,47 @@ class DockerRunner:
         self.cpu_limit = "1.0"
         self.pids_limit = "128"
         self.tmpfs_limit = "128m"
-        self.maven_repo = "/home/agent/.m2/repository"
 
-    # run "mvn -o clean test" inside Docker and return result
-    # added -o so that it stays offline and doesn't download anything
+        # default image-preloaded repo used by benchmark tasks
+        self.image_maven_repo = "/home/agent/.m2/repository"
+
+        # project-specific mounted repo used by dependency-prefetch mode
+        self.mounted_maven_repo = "/maven-repo"
+
     def run_tests(self):
-        command = [
-            "docker",
-            "run",
-            "--rm",
+        return self.run_maven(
+            maven_args=["clean", "test"],
+            offline=self.offline,
+            network_enabled=self.network_enabled
+        )
 
-            # no internet access from inside the test container
-            "--network", "none",
+    def run_dependency_prefetch(self):
+        if self.maven_repo_host_dir is None:
+            raise RuntimeError("Dependency prefetch requires a host-mounted Maven repository.")
 
-            # resource limits
-            "--memory", self.memory_limit,
-            "--memory-swap", self.memory_limit,
-            "--cpus", self.cpu_limit,
-            "--pids-limit", self.pids_limit,
+        return self.run_maven(
+            maven_args=["-B", "dependency:go-offline"],
+            offline=False,
+            network_enabled=True
+        )
 
-            # privilege limits
-            "--cap-drop", "ALL",
-            "--security-opt", "no-new-privileges",
+    def run_maven(self, maven_args, offline=None, network_enabled=None):
+        if offline is None:
+            offline = self.offline
 
-            # make the container filesystem read-only
-            # /workspace is still writable because it is a bind mount
-            "--read-only",
+        if network_enabled is None:
+            network_enabled = self.network_enabled
 
-            # provide a small writable temporary filesystem for Java/Maven temp usage
-            "--tmpfs", f"/tmp:rw,nosuid,nodev,exec,size={self.tmpfs_limit}",
+        command = self.build_base_command(network_enabled=network_enabled)
 
-            # run as non-root
-            "--user", self.container_user,
+        command.append(self.image_name)
+        command.append("mvn")
 
-            # keep HOME away from /root
-            "-e", "HOME=/tmp",
-            "-e", "MAVEN_CONFIG=/tmp/.m2",
-            "-e", "MAVEN_OPTS=-Dstyle.color=never",
+        if offline:
+            command.append("-o")
 
-            # mount only the sandbox workspace
-            "-v", f"{self.sandbox_root}:/workspace:rw",
-            "-w", "/workspace",
-
-            self.image_name,
-
-            "mvn",
-            "-o",
-            f"-Dmaven.repo.local={self.maven_repo}",
-            "clean",
-            "test"
-        ]
+        command.append(f"-Dmaven.repo.local={self.maven_repo_container_path()}")
+        command.extend(maven_args)
 
         start_time = time.perf_counter()
 
@@ -129,10 +138,60 @@ class DockerRunner:
                 duration_seconds=duration_seconds
             )
 
-    # short text summary of the Docker sandbox policy
+    def build_base_command(self, network_enabled):
+        command = [
+            "docker",
+            "run",
+            "--rm",
+        ]
+
+        if network_enabled:
+            command.extend(["--network", "bridge"])
+        else:
+            command.extend(["--network", "none"])
+
+        command.extend([
+            "--memory", self.memory_limit,
+            "--memory-swap", self.memory_limit,
+            "--cpus", self.cpu_limit,
+            "--pids-limit", self.pids_limit,
+
+            "--cap-drop", "ALL",
+            "--security-opt", "no-new-privileges",
+
+            "--read-only",
+
+            "--tmpfs", f"/tmp:rw,nosuid,nodev,exec,size={self.tmpfs_limit}",
+
+            "--user", self.container_user,
+
+            "-e", "HOME=/tmp",
+            "-e", "MAVEN_CONFIG=/tmp/.m2",
+            "-e", "MAVEN_OPTS=-Dstyle.color=never",
+        ])
+
+        if self.maven_repo_host_dir is not None:
+            self.maven_repo_host_dir.mkdir(parents=True, exist_ok=True)
+            command.extend([
+                "-v", f"{self.maven_repo_host_dir}:/maven-repo:rw"
+            ])
+
+        command.extend([
+            "-v", f"{self.sandbox_root}:/workspace:rw",
+            "-w", "/workspace",
+        ])
+
+        return command
+
+    def maven_repo_container_path(self):
+        if self.maven_repo_host_dir is not None:
+            return self.mounted_maven_repo
+
+        return self.image_maven_repo
+
     def describe_security_policy(self):
         return {
-            "network": "none",
+            "network": "bridge" if self.network_enabled else "none",
             "user": self.container_user,
             "memory": self.memory_limit,
             "memory_swap": self.memory_limit,
@@ -143,10 +202,11 @@ class DockerRunner:
             "read_only_root_filesystem": True,
             "tmpfs": f"/tmp rw,nosuid,nodev,exec,size={self.tmpfs_limit}",
             "workspace_mount": f"{self.sandbox_root}:/workspace:rw",
-            "maven_repo": self.maven_repo
+            "maven_repo_host_dir": str(self.maven_repo_host_dir) if self.maven_repo_host_dir else None,
+            "maven_repo_container": self.maven_repo_container_path(),
+            "offline": self.offline
         }
 
-    # timeout output can be sometimes not a string, so we make it a text to be sure
     @staticmethod
     def to_text(value):
         if value is None:

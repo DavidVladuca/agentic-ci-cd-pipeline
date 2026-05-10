@@ -24,7 +24,9 @@ class ProjectRepairWorkflow:
         model,
         max_attempts,
         docker_image,
-        timeout_seconds
+        timeout_seconds,
+        prepare_dependencies=False,
+        dependency_timeout_seconds=180
     ):
         self.project_root = Path(project_root).resolve()
         self.logger = logger
@@ -33,6 +35,8 @@ class ProjectRepairWorkflow:
         self.max_attempts = max_attempts
         self.docker_image = docker_image
         self.timeout_seconds = timeout_seconds
+        self.prepare_dependencies = prepare_dependencies
+        self.dependency_timeout_seconds = dependency_timeout_seconds
 
     def run(
         self,
@@ -72,7 +76,9 @@ class ProjectRepairWorkflow:
             model=self.model,
             max_attempts=self.max_attempts,
             docker_image=self.docker_image,
-            timeout_seconds=self.timeout_seconds
+            timeout_seconds=self.timeout_seconds,
+            dependency_timeout_seconds=self.dependency_timeout_seconds,
+            prepare_dependencies=self.prepare_dependencies
         )
 
         repair_result = pipeline.run_repair_task(repair_task)

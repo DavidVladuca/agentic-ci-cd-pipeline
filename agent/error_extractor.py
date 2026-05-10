@@ -96,6 +96,9 @@ class ErrorExtractor:
         if error_type == "LLM_ERROR":
             return "LLM_ERROR"
 
+        if error_type == "JAVA_VERSION_ERROR":
+            return "JAVA_VERSION_ERROR"
+
         return normalized
 
     @staticmethod
@@ -146,6 +149,14 @@ class ErrorExtractor:
             or "cannot access central" in lowered
         ):
             return "DEPENDENCY_RESOLUTION_ERROR"
+
+        if (
+            "requirejavaversion failed" in lowered
+            or "detected jdk" in lowered and "allowed range" in lowered
+            or "is not in the allowed range" in lowered
+            or "maven-enforcer-plugin" in lowered and "requirejavaversion" in lowered
+        ):
+            return "JAVA_VERSION_ERROR"
 
         if (
             "compilation error" in lowered
