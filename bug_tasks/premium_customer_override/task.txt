@@ -1,0 +1,7 @@
+Repair Customer and PremiumCustomer.
+
+Rules:
+- regular Customer has 0% discount
+- PremiumCustomer has 10% discount
+- finalPrice(price) must use the runtime discount rate
+- do not change public method names

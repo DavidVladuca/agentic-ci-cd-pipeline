@@ -1,0 +1,9 @@
+Repair LoanApplication, DebtRatioCalculator, and LoanDecisionService.
+
+Rules:
+- approve applications only when credit score is at least 700
+- reject applications below credit score 700
+- approve only when debt ratio is less than or equal to 0.40
+- debt ratio is monthlyDebtCents / monthlyIncomeCents using decimal arithmetic
+- monthly income must be positive
+- preserve all public method names

@@ -1,0 +1,6 @@
+{
+  "difficulty": "hard",
+  "category": "two-file-domain-logic",
+  "description": "Checkout ignores valid discounts and Coupon treats expiry date incorrectly.",
+  "expected_error_type": "TEST_FAILURE"
+}

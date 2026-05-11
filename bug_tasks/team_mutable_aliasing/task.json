@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "mutable-aliasing",
+  "description": "Team stores and exposes a mutable list alias.",
+  "expected_error_type": "TEST_FAILURE"
+}

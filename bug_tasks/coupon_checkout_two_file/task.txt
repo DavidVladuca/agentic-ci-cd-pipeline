@@ -1,0 +1,7 @@
+Repair Coupon and Checkout.
+
+Rules:
+- Coupon.isValidOn(date) is valid through and including its expiry date.
+- Checkout.totalAfterDiscount(subtotal, coupon, date) applies the coupon discount only when the coupon is valid.
+- Null coupon means no discount.
+- Do not return negative totals.

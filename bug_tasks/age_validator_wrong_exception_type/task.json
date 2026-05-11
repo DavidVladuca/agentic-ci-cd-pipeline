@@ -1,0 +1,6 @@
+{
+  "difficulty": "easy",
+  "category": "wrong-exception-type",
+  "description": "AgeValidator throws the wrong exception type for underage input.",
+  "expected_error_type": "TEST_FAILURE"
+}

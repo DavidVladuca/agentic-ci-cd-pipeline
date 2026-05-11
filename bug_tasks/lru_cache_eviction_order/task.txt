@@ -1,0 +1,9 @@
+Repair LruCache.
+
+Rules:
+- get(key) returns the value or null when absent
+- get(key) must mark the key as recently used
+- put(key, value) inserts or updates the value
+- updating an existing key must not evict another key
+- when capacity is exceeded, evict the least recently used key
+- preserve the generic public API

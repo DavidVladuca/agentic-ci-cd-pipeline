@@ -1,0 +1,6 @@
+{
+  "difficulty": "easy",
+  "category": "date-boundary",
+  "description": "Subscription expiry date is incorrectly treated as exclusive.",
+  "expected_error_type": "TEST_FAILURE"
+}

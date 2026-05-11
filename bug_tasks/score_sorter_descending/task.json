@@ -1,0 +1,6 @@
+{
+  "difficulty": "easy",
+  "category": "sorting-comparator",
+  "description": "ScoreSorter returns the lowest scores first instead of highest scores first.",
+  "expected_error_type": "TEST_FAILURE"
+}

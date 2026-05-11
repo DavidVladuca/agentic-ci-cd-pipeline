@@ -1,0 +1,6 @@
+Repair AgeValidator.validateAdult(int age).
+
+Rules:
+- ages 18 and above are valid
+- ages below 18 must throw IllegalArgumentException
+- valid ages must not throw

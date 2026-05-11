@@ -1,0 +1,8 @@
+Repair NumberUtils.
+
+Rules:
+- clamp(int value, int min, int max) clamps integer values.
+- clamp(double value, double min, double max) clamps double values without losing decimals.
+- values below min return min.
+- values above max return max.
+- values inside the range are returned unchanged.

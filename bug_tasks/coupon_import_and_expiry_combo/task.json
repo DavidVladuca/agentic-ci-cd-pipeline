@@ -1,0 +1,6 @@
+{
+  "difficulty": "hard",
+  "category": "package-compilation-plus-logic",
+  "description": "Project first fails from a wrong package import, then hidden tests expose expiry-date logic.",
+  "expected_error_type": "COMPILATION_ERROR"
+}

@@ -1,0 +1,7 @@
+Repair report.UserReport.
+
+Rules:
+- UserReport.userLine(name) must return the formatted user name.
+- utils.NameFormatter is the formatter class.
+- Preserve package declarations.
+- Do not move files.

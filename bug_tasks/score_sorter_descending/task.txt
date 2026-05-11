@@ -1,0 +1,7 @@
+Repair ScoreSorter.topScores(List<Integer> scores, int limit).
+
+Rules:
+- return the highest scores first
+- do not mutate the input list
+- if limit is larger than the list size, return all scores sorted descending
+- if limit is zero, return an empty list

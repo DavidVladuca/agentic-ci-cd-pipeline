@@ -1,0 +1,8 @@
+Repair CsvParser.parseLine(String line).
+
+Rules:
+- comma separates fields only when outside quotes
+- quoted fields may contain commas
+- escaped quote inside a quoted field is represented by two quote characters
+- trailing empty fields must be preserved
+- return fields without surrounding quotes

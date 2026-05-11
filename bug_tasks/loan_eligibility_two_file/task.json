@@ -1,0 +1,6 @@
+{
+  "difficulty": "hard",
+  "category": "multi-file-boundary-and-arithmetic",
+  "description": "Loan approval has both a credit-score boundary bug and an integer-division debt-ratio bug.",
+  "expected_error_type": "TEST_FAILURE"
+}

@@ -16,6 +16,9 @@ from agent.file_selector import FileSelector
 from agent.repair_strategy import RepairStrategy
 
 
+NO_CHANGE_SENTINEL = "No textual changes detected."
+
+
 @dataclass
 class RepairRunResult:
     task_name: str
@@ -275,10 +278,12 @@ class RepairPipeline:
 
         last_error_summary = baseline_error_summary
         last_patch_feedback = None
+        last_meaningful_patch_feedback = None
         strategy_note = None
         expand_context_next_attempt = False
         expanded_error_fingerprints = set()
         seen_error_counts = {}
+        consecutive_no_change_count = 0
 
         last_compiling_snapshot = None
 
@@ -397,6 +402,82 @@ class RepairPipeline:
                 self.logger.info("[REPAIR] Attempt artifacts: %s", attempt_artifact_dir)
                 self.logger.info("[REPAIR] Patch file: %s", attempt_patch_file)
 
+                attempt_patch_text = self.diff_tracker.read_patch_file(attempt_patch_file)
+
+                if attempt_patch_text and attempt_patch_text.strip() == NO_CHANGE_SENTINEL:
+                    consecutive_no_change_count += 1
+
+                    error_summary = (
+                        "The previous repair output made zero textual changes to the source files. "
+                        "The generated content was identical to the current broken code, so running Maven again "
+                        "would only repeat the same failure. The next repair must make a real source change."
+                    )
+
+                    error_type = "LLM_ERROR"
+
+                    no_change_note = (
+                        "CRITICAL: Your previous repair made ZERO source-code changes. "
+                        "The existing code is known to be wrong. "
+                        "Do not submit the same implementation again. "
+                        "Use the Maven/JUnit failure output as concrete behavioral evidence. "
+                        "Identify which rule is still violated and change the implementation so the actual result changes."
+                    )
+
+                    strategy_note = no_change_note
+
+                    last_error_summary = (
+                        last_error_summary + "\n\n" + error_summary
+                        if last_error_summary
+                        else error_summary
+                    )
+
+                    # Keep the last real diff. Do not feed the sentinel as the previous patch.
+                    last_patch_feedback = last_meaningful_patch_feedback
+
+                    # A no-change output means the model is stuck. Give it broader context next.
+                    expand_context_next_attempt = True
+
+                    attempt_seconds = time.perf_counter() - attempt_start
+
+                    self.logger.error("[REPAIR] No-change repair patch detected. Skipping Maven run.")
+                    self.logger.error(error_summary)
+
+                    metrics.add_attempt(
+                        attempt=attempt,
+                        status="NO_CHANGE_PATCH",
+                        llm_seconds=llm_seconds,
+                        workspace_seconds=workspace_seconds,
+                        maven_seconds=0.0,
+                        attempt_seconds=attempt_seconds,
+                        exit_code=None,
+                        error_type=error_type,
+                        error_summary=error_summary,
+                        changed_files=attempt_changed_files,
+                        patch_file=attempt_patch_file,
+                        artifact_dir=attempt_artifact_dir
+                    )
+
+                    if consecutive_no_change_count >= 3:
+                        self.logger.error("[REPAIR] Model stagnated: repeated no-change repair outputs.")
+
+                        return self.finish_run(
+                            repair_task=repair_task,
+                            metrics=metrics,
+                            final_status="FAILED_MODEL_STAGNATION",
+                            baseline_status=baseline_status,
+                            baseline_error_type=baseline_error_type,
+                            artifact_dir=str(task_artifact_dir),
+                            final_patch_file=final_patch_file,
+                            changed_files=all_changed_files,
+                            patch_files=all_patch_files
+                        )
+
+                    continue
+
+                # This was a real textual patch. Preserve it for future feedback.
+                last_meaningful_patch_feedback = attempt_patch_text
+                consecutive_no_change_count = 0
+
             # this is for catching errors before Docker/Maven runs!!!
             except RuntimeError as e:
                 llm_seconds = time.perf_counter() - attempt_start
@@ -414,41 +495,40 @@ class RepairPipeline:
                 previous_count = seen_error_counts.get(normalized_error, 0)
                 seen_error_counts[normalized_error] = previous_count + 1
 
-                if previous_count > 0:
-                    self.logger.error("[REPAIR] Repeated LLM/write failure detected. Stopping.")
-
-                    metrics.add_attempt(
-                        attempt=attempt,
-                        status="REPEATED_LLM_FAILURE",
-                        llm_seconds=llm_seconds,
-                        workspace_seconds=workspace_seconds,
-                        maven_seconds=maven_seconds,
-                        attempt_seconds=attempt_seconds,
-                        exit_code=None,
-                        error_type=error_type,
-                        error_summary=error_summary,
-                        changed_files=attempt_changed_files,
-                        patch_file=attempt_patch_file,
-                        artifact_dir=attempt_artifact_dir
-                    )
-
-                    return self.finish_run(
-                        repair_task=repair_task,
-                        metrics=metrics,
-                        final_status="FAILED_REPEATED_LLM_FAILURE",
-                        baseline_status=baseline_status,
-                        baseline_error_type=baseline_error_type,
-                        artifact_dir=str(task_artifact_dir),
-                        final_patch_file=final_patch_file,
-                        changed_files=all_changed_files,
-                        patch_files=all_patch_files
-                    )
-
                 last_error_summary = error_summary
+
+                # Preserve the last real diff if one exists. Do not erase useful feedback.
+                last_patch_feedback = last_meaningful_patch_feedback
+
+                strategy_note = (
+                    "The previous model output was rejected before Maven could run. "
+                    "Return a complete valid Java source file. "
+                    "The content string must include the full file from imports through the final closing brace. "
+                    "Do not truncate the file. "
+                    "Do not output partial classes. "
+                    "Do not output partial methods. "
+                    "Do not use placeholders. "
+                    "Do not use comments instead of implementation. "
+                    "Make the smallest correct repair."
+                )
+
+                attempt_status = "LLM_FAILURE"
+
+                if previous_count > 0:
+                    self.logger.error(
+                        "[REPAIR] Repeated LLM/write failure detected. "
+                        "Feeding the validation failure back to the model instead of stopping early."
+                    )
+
+                    attempt_status = "REPEATED_LLM_FAILURE"
+
+                    if normalized_error not in expanded_error_fingerprints:
+                        expanded_error_fingerprints.add(normalized_error)
+                        expand_context_next_attempt = True
 
                 metrics.add_attempt(
                     attempt=attempt,
-                    status="LLM_FAILURE",
+                    status=attempt_status,
                     llm_seconds=llm_seconds,
                     workspace_seconds=workspace_seconds,
                     maven_seconds=maven_seconds,
@@ -460,6 +540,19 @@ class RepairPipeline:
                     patch_file=attempt_patch_file,
                     artifact_dir=attempt_artifact_dir
                 )
+
+                if attempt == self.max_attempts:
+                    return self.finish_run(
+                        repair_task=repair_task,
+                        metrics=metrics,
+                        final_status="FAILED_REPEATED_LLM_FAILURE" if previous_count > 0 else "FAILED_LLM_FAILURE",
+                        baseline_status=baseline_status,
+                        baseline_error_type=baseline_error_type,
+                        artifact_dir=str(task_artifact_dir),
+                        final_patch_file=final_patch_file,
+                        changed_files=all_changed_files,
+                        patch_files=all_patch_files
+                    )
 
                 continue
 
@@ -539,6 +632,10 @@ class RepairPipeline:
 
             attempt_patch_text = self.diff_tracker.read_patch_file(attempt_patch_file)
 
+            if attempt_patch_text and attempt_patch_text.strip() != NO_CHANGE_SENTINEL:
+                last_meaningful_patch_feedback = attempt_patch_text
+                consecutive_no_change_count = 0
+
             decision = RepairStrategy.decide_after_maven_failure(
                 error_type=error_type,
                 repeated_count=previous_count,
@@ -561,8 +658,32 @@ class RepairPipeline:
                 self.logger.info("[REPAIR] Failed attempt still compiled. Updated last compiling snapshot.")
 
             last_error_summary = error_summary
-            last_patch_feedback = attempt_patch_text
+
+            if attempt_patch_text and attempt_patch_text.strip() != NO_CHANGE_SENTINEL:
+                last_patch_feedback = attempt_patch_text
+            else:
+                last_patch_feedback = last_meaningful_patch_feedback
+
             strategy_note = decision.strategy_note
+
+            if previous_count > 0:
+                assertion_feedback_note = (
+                    "The latest Maven/JUnit output contains concrete failing test names and expected/actual values. "
+                    "Treat those as executable examples of the required behavior. "
+                    "For every failing assertion, identify what exact output or boolean result the current code still produces, "
+                    "and make the next patch change that behavior. "
+                    "Do not submit a patch that would produce the same actual value shown in the failure output again. "
+                    "If the expected value contains punctuation, delimiters, quotes, empty values, signs, or boundary values "
+                    "that the actual value lacks, preserve those values explicitly. "
+                    "If a failing test name says a case should be allowed but the actual result is false, the current logic is too restrictive. "
+                    "If a failing test name says a case should be rejected but the actual result is true, the current logic is too permissive."
+                )
+
+                strategy_note = (
+                    assertion_feedback_note + " " + strategy_note
+                    if strategy_note
+                    else assertion_feedback_note
+                )
 
             if decision.should_expand_context:
                 self.logger.error("[REPAIR] Repeated Maven error detected. Will retry once with expanded context.")

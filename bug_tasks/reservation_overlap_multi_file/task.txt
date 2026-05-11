@@ -1,0 +1,8 @@
+Repair TimeRange, Reservation, and ReservationBook.
+
+Rules:
+- reservations conflict only when they are for the same room and their time ranges overlap
+- reservations in different rooms do not conflict
+- adjacent reservations in the same room are allowed
+- overlapping reservations in the same room are rejected
+- preserve all public constructors and methods

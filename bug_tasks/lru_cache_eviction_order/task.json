@@ -1,0 +1,6 @@
+{
+  "difficulty": "hard",
+  "category": "stateful-data-structure",
+  "description": "LRU cache does not update recency on get and mishandles updates.",
+  "expected_error_type": "TEST_FAILURE"
+}

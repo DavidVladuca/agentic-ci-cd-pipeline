@@ -1,0 +1,6 @@
+Repair Team.
+
+Rules:
+- Team must not be affected by later mutations to the constructor input list.
+- getMembers() must not allow callers to mutate Team internal state.
+- memberCount() returns the number of members stored by the Team.

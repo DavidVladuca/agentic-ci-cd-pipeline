@@ -1,0 +1,7 @@
+Repair ConfigParser.parseLine(String line).
+
+Rules:
+- parse lines in the form key:value
+- trim the key and value
+- values may contain additional ':' characters
+- missing key or missing separator should throw IllegalArgumentException

@@ -1,0 +1,9 @@
+Repair billing.InvoiceService and discounts.CouponRule.
+
+Rules:
+- InvoiceService must use discounts.CouponRule.
+- CouponRule.isValidOn(date) is valid through and including its expiry date.
+- InvoiceService.totalAfterDiscount applies the discount only when the coupon is valid.
+- Null coupon means no discount.
+- Total must never be negative.
+- Preserve package declarations and public method signatures.

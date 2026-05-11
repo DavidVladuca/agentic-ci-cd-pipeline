@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "string-parsing",
+  "description": "ConfigParser splits on every colon instead of only the first colon.",
+  "expected_error_type": "TEST_FAILURE"
+}

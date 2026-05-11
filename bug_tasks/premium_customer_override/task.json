@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "inheritance-override",
+  "description": "PremiumCustomer override returns the base customer discount instead of premium discount.",
+  "expected_error_type": "TEST_FAILURE"
+}

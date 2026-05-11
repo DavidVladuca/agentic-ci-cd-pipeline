@@ -1,0 +1,6 @@
+{
+  "difficulty": "hard",
+  "category": "parser-state-machine",
+  "description": "CsvParser uses simple comma splitting and cannot handle quoted fields or trailing empty fields.",
+  "expected_error_type": "TEST_FAILURE"
+}

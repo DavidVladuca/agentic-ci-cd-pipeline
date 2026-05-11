@@ -1,0 +1,7 @@
+Repair EmailAddress.
+
+Rules:
+- EmailAddress equality must be case-insensitive.
+- Equal EmailAddress objects must have the same hashCode.
+- Null constructor input must throw IllegalArgumentException.
+- Do not change the public constructor or public value() method.

@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "package-import-compilation",
+  "description": "Package-based project has an incorrect import, causing compilation failure.",
+  "expected_error_type": "COMPILATION_ERROR"
+}

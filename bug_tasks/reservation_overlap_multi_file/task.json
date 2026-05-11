@@ -1,0 +1,6 @@
+{
+  "difficulty": "hard",
+  "category": "multi-file-state-and-time-boundary",
+  "description": "Reservation conflict logic ignores room identity and treats adjacent ranges as overlapping.",
+  "expected_error_type": "TEST_FAILURE"
+}

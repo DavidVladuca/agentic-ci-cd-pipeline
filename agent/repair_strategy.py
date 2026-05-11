@@ -42,6 +42,62 @@ class RepairStrategy:
         )
 
     @classmethod
+    def repeated_failure_strategy_note(cls):
+        return (
+            "The same Maven/JUnit error appeared again after the previous patch. "
+            "The previous fix was incomplete, targeted the wrong method, or failed to repair "
+            "the helper class that defines the real domain rule. "
+            "Do not keep making small edits to the same caller if the rule belongs in a collaborator. "
+            "Re-read every provided production file. "
+            "If the task mentions multiple classes, consider coordinated edits across multiple files. "
+
+            "Do not fix one failing assertion by blindly negating or inverting a whole predicate. "
+            "If previous failures include both expected true/was false and expected false/was true cases, "
+            "the solution usually needs a more precise condition, not a polarity flip. "
+            "A correct predicate must satisfy all listed examples at the same time. "
+
+            "If the failure involves parsing, quoted delimiters, escaped characters, "
+            "or trailing empty fields, avoid complex regex; prefer a small character-by-character "
+            "state machine. "
+            "A correct state machine for quoted-delimiter formats must handle at least three distinct "
+            "cases: (1) a delimiter outside quotes ends the current field; "
+            "(2) a delimiter inside quotes is literal data; "
+            "(3) an escape sequence inside quotes, such as two consecutive quote characters, "
+            "produces one literal quote character in the output and advances past both characters. "
+            "If your previous implementation did not handle case (3), it will silently strip or "
+            "misplace characters in escaped fields. "
+            "Also preserve trailing empty fields explicitly when the loop ends. "
+
+            "If the failure involves overlap, conflict, ranges, intervals, dates, times, "
+            "boundaries, or adjacency, inspect the helper/domain method that defines the range "
+            "or overlap semantics, not only the caller. "
+            "Be explicit about inclusive versus exclusive endpoints. "
+            "If adjacency is allowed, touching endpoints must not count as overlap. "
+            "A correct strict-overlap predicate is: leftStart < rightEnd and rightStart < leftEnd. "
+            "In Java date/time APIs, !x.isAfter(y) is equivalent to x <= y and is inclusive — "
+            "it treats touching endpoints as overlapping. "
+            "For non-inclusive adjacency, use x.isBefore(y), which is strict less-than. "
+            "Do not invert an entire caller condition just to satisfy one failing assertion; "
+            "fix the underlying domain predicate instead. "
+
+            "If the failure involves decimal arithmetic, do not change public method signatures. "
+            "Use double arithmetic or local BigDecimal values only when compatible with existing public APIs."
+        )
+    
+    @classmethod
+    def rollback_strategy_note(cls):
+        return (
+            "The previous repair patch introduced a compilation error. "
+            "The sandbox was rolled back to the last known compiling source state. "
+            "Do not repeat the invalid edit. "
+            "Produce valid Java 17 source. "
+            "Preserve public method signatures, return types, and parameter lists exactly. "
+            "If you introduce a class from java.math, java.util, or another package, "
+            "the edited file must include the required import. "
+            "Prefer simple fixes over complex regex or signature changes."
+        )
+
+    @classmethod
     def decide_after_maven_failure(
         cls,
         error_type,
@@ -54,15 +110,18 @@ class RepairStrategy:
             has_last_compiling_snapshot=has_last_compiling_snapshot
         )
 
-        strategy_note = None
+        notes = []
 
         if should_rollback:
-            strategy_note = (
-                "The previous repair patch introduced a compilation error. "
-                "The sandbox was rolled back to the last known compiling source state. "
-                "Do not repeat the invalid edit. Produce valid Java source that compiles."
-            )
+            notes.append(cls.rollback_strategy_note())
 
+        if repeated_count > 0:
+            notes.append(cls.repeated_failure_strategy_note())
+
+        strategy_note = " ".join(notes) if notes else None
+
+        # First time seeing this exact error: do not panic.
+        # Let the normal loop continue with selected context.
         if repeated_count <= 0:
             return RepairDecision(
                 should_rollback=should_rollback,
@@ -71,10 +130,12 @@ class RepairStrategy:
                 strategy_note=strategy_note
             )
 
+        # First repeat: expand context once.
         if not context_already_expanded:
             expansion_note = (
-                "The same Maven/JUnit error appeared again. "
-                "The next attempt will use expanded project context."
+                "The next attempt will use expanded project context. "
+                "Use that expanded context to inspect related production classes, not only the stack-trace file. "
+                "Return every production file that needs to change."
             )
 
             if strategy_note:
@@ -89,8 +150,31 @@ class RepairStrategy:
                 strategy_note=strategy_note
             )
 
+        # After expanded context, do not stop immediately.
+        # Hard tasks often need one or two more attempts after the model has seen the full local design.
+        if repeated_count < 3:
+            post_expansion_note = (
+                "The same error still repeats after expanded context. "
+                "Do not repeat the previous patch. "
+                "Make a materially different repair. "
+                "Prefer fixing the domain/helper method that defines the rule instead of patching symptoms in the caller."
+            )
+
+            if strategy_note:
+                strategy_note = strategy_note + " " + post_expansion_note
+            else:
+                strategy_note = post_expansion_note
+
+            return RepairDecision(
+                should_rollback=should_rollback,
+                should_expand_context=False,
+                should_stop=False,
+                strategy_note=strategy_note
+            )
+
+        # Only stop after several repeats, not immediately after the first expanded-context failure.
         stop_note = (
-            "The same Maven/JUnit error repeated even after expanded context. "
+            "The same Maven/JUnit error repeated multiple times even after expanded context. "
             "Stopping to avoid wasting repair attempts."
         )
 

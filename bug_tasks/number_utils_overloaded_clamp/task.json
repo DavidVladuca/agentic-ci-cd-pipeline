@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "overloaded-methods",
+  "description": "Double clamp overload incorrectly delegates through int clamp and loses decimals.",
+  "expected_error_type": "TEST_FAILURE"
+}

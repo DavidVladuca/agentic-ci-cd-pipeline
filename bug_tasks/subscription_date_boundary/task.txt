@@ -1,0 +1,8 @@
+Repair Subscription.isActiveOn(LocalDate date).
+
+Rules:
+- subscription is active on the start date
+- subscription is active on the expiry date
+- subscription is active between start and expiry
+- subscription is inactive before start
+- subscription is inactive after expiry

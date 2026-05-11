@@ -1,0 +1,6 @@
+{
+  "difficulty": "medium",
+  "category": "equals-hashcode-contract",
+  "description": "EmailAddress equals is case-insensitive but hashCode is case-sensitive.",
+  "expected_error_type": "TEST_FAILURE"
+}
