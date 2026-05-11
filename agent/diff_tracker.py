@@ -3,6 +3,9 @@ from datetime import datetime
 import difflib
 
 
+NO_CHANGE_SENTINEL = "No textual changes detected."
+
+
 # tracks before/after source changes and writes patch artifacts
 class DiffTracker:
     def __init__(self, project_root, run_id=None):
@@ -147,7 +150,7 @@ class DiffTracker:
         if patch_parts:
             return "\n".join(patch_parts)
 
-        return "No textual changes detected.\n"
+        return NO_CHANGE_SENTINEL + "\n"
 
     def write_nested_file(self, root_dir, relative_path, content):
         target_path = Path(root_dir) / relative_path

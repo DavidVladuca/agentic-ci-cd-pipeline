@@ -1,8 +1,9 @@
 from pathlib import Path
 
 
-# applies the changes requested by the LLM after validation
 class FileRewriter:
+    """Applies LLM-generated file edits to the sandbox with path validation and atomic write-then-restore semantics."""
+
     def __init__(self, sandbox_root):
         self.sandbox_root = Path(sandbox_root).resolve()
         self.production_root = self.sandbox_root / "src" / "main" / "java"
@@ -110,7 +111,8 @@ class FileRewriter:
         if not target_path.exists():
             raise RuntimeError(
                 f"LLM tried to create a new file. "
-                f"Phase 19 only allows editing existing production files: {relative_path}"
+                f"Repair agent only allows editing existing production files; "
+                f"test files, pom.xml, and new files are not allowed: {relative_path}"
             )
 
         if not target_path.is_file():

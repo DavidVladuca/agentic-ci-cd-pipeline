@@ -2,11 +2,8 @@ import json
 import urllib.request
 import urllib.error
 
-# this is the LLM communication layer
-# doesnt write files, run maven or log
-# has only one responsability:
-# send a task/error feedback to Ollama, force the model to return JSON, parse + validate, and return clean Java code strings or repair file edits
 class LLMClient:
+    """Handles all Ollama API communication, prompt construction, JSON parsing, and repair output validation."""
     def __init__(
         self,
         model="agent-coder",
@@ -386,12 +383,7 @@ class LLMClient:
     def validate_repair_file_content(self, path, content):
         stripped = content.strip()
 
-        if not stripped.endswith("}"):
-            raise RuntimeError(
-                f"Repair file content appears incomplete for path: {path}. "
-                "Java source should usually end with a closing brace."
-            )
-
+        # Catches truncated LLM outputs where the model stopped mid-file before the final closing brace.
         if not stripped.endswith("}"):
             raise RuntimeError(
                 f"Repair file content appears incomplete for path: {path}. "

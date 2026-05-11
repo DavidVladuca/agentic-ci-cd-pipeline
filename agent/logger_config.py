@@ -30,5 +30,6 @@ def setup_logger(project_root):
 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
+    logger.propagate = False
 
     return logger, log_file

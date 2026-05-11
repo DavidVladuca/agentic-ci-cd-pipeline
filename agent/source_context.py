@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 
 
 # reads selected source files from the repair sandbox and builds context for the LLM
@@ -47,6 +48,11 @@ class SourceContextBuilder:
             section_cost = len(section) + 8
 
             if sections and total_chars + section_cost > self.max_chars:
+                logging.getLogger("agent_pipeline").warning(
+                    "[SourceContext] Skipping %s (~%d chars): would exceed context budget of %d chars. "
+                    "Context may be incomplete.",
+                    relative_path, section_cost, self.max_chars
+                )
                 continue
 
             sections.append(section)

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+import logging
 import shutil
 
 
@@ -33,6 +34,7 @@ class ProjectSandbox:
         sandbox_root = self.base_dir / repair_task.name
 
         if sandbox_root.exists():
+            logging.getLogger("agent_pipeline").info("[Sandbox] Removing existing sandbox: %s", sandbox_root)
             shutil.rmtree(sandbox_root)
 
         shutil.copytree(

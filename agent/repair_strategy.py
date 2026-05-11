@@ -10,6 +10,8 @@ class RepairDecision:
 
 
 class RepairStrategy:
+    """Encodes decision logic for when to rollback, expand context, or stop a repair attempt based on error type and repeat count."""
+
     COMPILED_ERROR_TYPES = {
         "TEST_FAILURE"
     }

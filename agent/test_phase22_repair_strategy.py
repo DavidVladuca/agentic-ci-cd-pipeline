@@ -45,10 +45,24 @@ class Phase22RepairStrategyTests(unittest.TestCase):
         self.assertFalse(decision.should_stop)
         self.assertTrue(decision.should_expand_context)
 
-    def test_repeated_error_after_expansion_stops(self):
+    def test_repeated_error_after_expansion_continues_briefly(self):
+        # After context expansion, the strategy gives the model a few more attempts
+        # (repeated_count < 3) before stopping. Stopping immediately was the Phase 22
+        # behavior; Phase 23 extended this to reduce premature failures on hard tasks.
         decision = RepairStrategy.decide_after_maven_failure(
             error_type="TEST_FAILURE",
             repeated_count=1,
+            context_already_expanded=True,
+            has_last_compiling_snapshot=True
+        )
+
+        self.assertFalse(decision.should_stop)
+        self.assertFalse(decision.should_expand_context)
+
+    def test_repeated_error_after_expansion_stops_at_threshold(self):
+        decision = RepairStrategy.decide_after_maven_failure(
+            error_type="TEST_FAILURE",
+            repeated_count=3,
             context_already_expanded=True,
             has_last_compiling_snapshot=True
         )

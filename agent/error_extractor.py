@@ -94,6 +94,24 @@ class ErrorExtractor:
             return "TIMEOUT"
 
         if error_type == "LLM_ERROR":
+            if "appears incomplete" in normalized:
+                return "LLM_ERROR:incomplete java source"
+
+            if "unbalanced braces" in normalized:
+                return "LLM_ERROR:unbalanced braces"
+
+            if "invalid java string/regex syntax" in normalized:
+                return "LLM_ERROR:invalid java string or regex syntax"
+
+            if "placeholder code" in normalized:
+                return "LLM_ERROR:placeholder code"
+
+            if "not valid json" in normalized:
+                return "LLM_ERROR:invalid json"
+
+            if "repair json 'files' must not be empty" in normalized:
+                return "LLM_ERROR:empty files"
+
             return "LLM_ERROR"
 
         if error_type == "JAVA_VERSION_ERROR":

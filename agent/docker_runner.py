@@ -3,8 +3,6 @@ import subprocess
 import time
 
 
-# runs Maven inside Docker
-# controller.py / repair_pipeline.py should not execute generated or repaired Java directly on the host machine
 class DockerResult:
     def __init__(self, exit_code, stdout, stderr, timed_out, duration_seconds=0.0):
         self.exit_code = exit_code
@@ -23,6 +21,8 @@ class DockerResult:
 
 
 class DockerRunner:
+    """Executes Maven/JUnit builds inside a sandboxed Docker container with strict resource and network constraints."""
+
     def __init__(
         self,
         sandbox_root,

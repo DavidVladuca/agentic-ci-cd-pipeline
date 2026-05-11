@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import time
 
-from agent.diff_tracker import DiffTracker
+from agent.diff_tracker import DiffTracker, NO_CHANGE_SENTINEL
 from agent.docker_runner import DockerRunner
 from agent.error_extractor import ErrorExtractor
 from agent.file_rewriter import FileRewriter
@@ -15,8 +15,6 @@ from agent.project_analyzer import ProjectAnalyzer
 from agent.file_selector import FileSelector
 from agent.repair_strategy import RepairStrategy
 
-
-NO_CHANGE_SENTINEL = "No textual changes detected."
 
 
 @dataclass
@@ -42,8 +40,8 @@ class RepairRunResult:
     patch_files: list[str]
 
 
-# run one full repair loop for one task
 class RepairPipeline:
+    """Runs one full LLM-guided repair loop for a single Java Maven task, including sandboxing, baseline testing, and iterative patch attempts."""
     def __init__(
         self,
         project_root,
