@@ -24,11 +24,20 @@ class LLMClient:
 
         return code_json
 
-    def generate_repair_files(self, task_prompt, source_context, previous_error):
+    def generate_repair_files(
+        self,
+        task_prompt,
+        source_context,
+        previous_error,
+        previous_patch=None,
+        strategy_note=None
+    ):
         prompt = self.build_file_repair_prompt(
             task_prompt=task_prompt,
             source_context=source_context,
-            previous_error=previous_error
+            previous_error=previous_error,
+            previous_patch=previous_patch,
+            strategy_note=strategy_note
         )
 
         repair_json = self.call_ollama_json(prompt)
@@ -156,7 +165,23 @@ class LLMClient:
                 - The test class must test the main class.
                 """.strip()
 
-    def build_file_repair_prompt(self, task_prompt, source_context, previous_error):
+    def build_file_repair_prompt(
+        self,
+        task_prompt,
+        source_context,
+        previous_error,
+        previous_patch=None,
+        strategy_note=None
+    ):
+        strategy_section = self.optional_prompt_section(
+            title="Repair strategy note",
+            content=strategy_note
+        )
+
+        patch_section = self.optional_prompt_section(
+            title="Previous patch diff",
+            content=previous_patch
+        )
         return f"""
                 You are repairing an existing Java Maven project.
 
@@ -188,6 +213,10 @@ class LLMClient:
 
                 Latest Maven/JUnit failure:
                 {previous_error}
+
+                {strategy_section}
+
+                {patch_section}
                 
                 {self.java_repair_safety_rules()}
 
@@ -268,6 +297,21 @@ class LLMClient:
 
             if not value.strip():
                 raise RuntimeError(f"{key} must not be empty.")
+    
+    @staticmethod
+    def optional_prompt_section(title, content):
+        if content is None:
+            return ""
+
+        text = str(content).strip()
+
+        if not text:
+            return ""
+
+        return f"""
+                {title}:
+                {text}
+                """.strip()
 
     # verify if the LLM followed the repair-file schema
     def validate_repair_json(self, repair_json):
@@ -323,3 +367,4 @@ class LLMClient:
 
             if not content.strip():
                 raise RuntimeError(f"Repair file content must not be empty for path: {path}")
+        

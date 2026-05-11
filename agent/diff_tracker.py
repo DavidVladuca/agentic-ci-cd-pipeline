@@ -153,3 +153,36 @@ class DiffTracker:
         target_path = Path(root_dir) / relative_path
         target_path.parent.mkdir(parents=True, exist_ok=True)
         target_path.write_text(content, encoding="utf-8")
+    
+    # restore src/main/java from a production-file snapshot
+    def restore_production_snapshot(self, sandbox_root, snapshot):
+        sandbox_root = Path(sandbox_root)
+        production_root = sandbox_root / "src" / "main" / "java"
+
+        if production_root.exists():
+            for file_path in sorted(production_root.rglob("*.java")):
+                if file_path.is_file():
+                    file_path.unlink()
+
+        for relative_path, content in snapshot.items():
+            self.write_nested_file(
+                root_dir=sandbox_root,
+                relative_path=relative_path,
+                content=content
+            )
+
+    def read_patch_file(self, patch_file, max_chars=4000):
+        if patch_file is None:
+            return None
+
+        patch_path = Path(patch_file)
+
+        if not patch_path.exists():
+            return None
+
+        text = patch_path.read_text(encoding="utf-8", errors="replace")
+
+        if len(text) <= max_chars:
+            return text
+
+        return text[-max_chars:]

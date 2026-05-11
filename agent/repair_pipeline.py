@@ -13,6 +13,7 @@ from agent.run_metrics import RunMetrics
 from agent.source_context import SourceContextBuilder
 from agent.project_analyzer import ProjectAnalyzer
 from agent.file_selector import FileSelector
+from agent.repair_strategy import RepairStrategy
 
 
 @dataclass
@@ -60,10 +61,10 @@ class RepairPipeline:
         self.max_attempts = max_attempts
         self.docker_image = docker_image
         self.timeout_seconds = timeout_seconds
-        self.diff_tracker = DiffTracker(self.project_root)
         self.prepare_dependencies = prepare_dependencies
         self.maven_repo_host_dir = Path(maven_repo_host_dir).resolve() if maven_repo_host_dir else None
         self.dependency_timeout_seconds = dependency_timeout_seconds
+        self.diff_tracker = DiffTracker(self.project_root)
 
     def run_task(self, task_dir):
         repair_task = RepairTask.load(task_dir)
@@ -102,7 +103,7 @@ class RepairPipeline:
             self.logger.info("[REPAIR] No hidden tests directory provided.")
         else:
             self.logger.info("[REPAIR] Hidden tests injected from: %s", repair_task.hidden_tests_dir)
-        
+
         maven_repo_host_dir = self.maven_repo_host_dir
 
         if self.prepare_dependencies:
@@ -128,20 +129,14 @@ class RepairPipeline:
 
             prefetch_result = prefetch_runner.run_dependency_prefetch()
 
-            self.logger.info(
-                "[REPAIR] Dependency prefetch exit code: %s",
-                prefetch_result.exit_code
-            )
-            self.logger.info(
-                "[TIMING] Dependency prefetch took %.3f seconds",
-                prefetch_result.duration_seconds
-            )
+            self.logger.info("[REPAIR] Dependency prefetch exit code: %s", prefetch_result.exit_code)
+            self.logger.info("[TIMING] Dependency prefetch took %.3f seconds", prefetch_result.duration_seconds)
 
             if not prefetch_result.success:
                 error_summary = ErrorExtractor.extract_errors(
                     raw_output=prefetch_result.combined_output,
                     timed_out=prefetch_result.timed_out,
-                    timeout_seconds=self.timeout_seconds
+                    timeout_seconds=self.dependency_timeout_seconds
                 )
 
                 error_type = ErrorExtractor.classify_error(
@@ -263,13 +258,7 @@ class RepairPipeline:
             error_summary=baseline_error_summary
         )
 
-        if baseline_error_type in {
-            "DEPENDENCY_RESOLUTION_ERROR",
-            "DOCKER_ERROR",
-            "SANDBOX_ERROR",
-            "TIMEOUT",
-            "JAVA_VERSION_ERROR"
-        }:
+        if RepairStrategy.is_infrastructure_error(baseline_error_type):
             self.logger.error("[REPAIR] Baseline failed because of infrastructure, not project code. Stopping before LLM repair.")
 
             return self.finish_run(
@@ -285,7 +274,19 @@ class RepairPipeline:
             )
 
         last_error_summary = baseline_error_summary
-        seen_errors = set()  # to see if we are stuck in a loop with the same repair failure
+        last_patch_feedback = None
+        strategy_note = None
+        expand_context_next_attempt = False
+        expanded_error_fingerprints = set()
+        seen_error_counts = {}
+
+        last_compiling_snapshot = None
+
+        if RepairStrategy.error_type_means_project_compiled(baseline_error_type):
+            last_compiling_snapshot = self.diff_tracker.snapshot_production_files(sandbox_root)
+            self.logger.info("[REPAIR] Baseline produced a compiling source state. Snapshot saved.")
+        else:
+            self.logger.info("[REPAIR] Baseline did not produce a known compiling source state.")
 
         for attempt in range(1, self.max_attempts + 1):
             attempt_start = time.perf_counter()
@@ -306,33 +307,45 @@ class RepairPipeline:
                     hidden_test_paths=hidden_test_paths
                 )
 
-                file_selection = file_selector.select(
-                    analysis=project_analysis,
-                    task_prompt=repair_task.prompt,
-                    error_summary=last_error_summary
-                )
+                if expand_context_next_attempt:
+                    self.logger.info("[REPAIR] Expanded context mode enabled for this attempt.")
 
-                self.logger.info(
-                    "[REPAIR] Selected %s context files, estimated context size: %s characters",
-                    len(file_selection.selected_paths),
-                    file_selection.estimated_chars
-                )
-
-                for selected_path in file_selection.selected_paths:
-                    reasons = file_selection.reasons_by_path.get(selected_path, [])
-                    reason_text = "; ".join(reasons) if reasons else "no reason recorded"
-
-                    self.logger.info(
-                        "[REPAIR] Context file selected: %s | %s",
-                        selected_path,
-                        reason_text
+                    source_context = source_context_builder.build(
+                        sandbox_root=sandbox_root,
+                        selected_paths=None,
+                        hidden_test_paths=hidden_test_paths
                     )
 
-                source_context = source_context_builder.build(
-                    sandbox_root=sandbox_root,
-                    selected_paths=file_selection.selected_paths,
-                    hidden_test_paths=hidden_test_paths
-                )
+                    expand_context_next_attempt = False
+
+                else:
+                    file_selection = file_selector.select(
+                        analysis=project_analysis,
+                        task_prompt=repair_task.prompt,
+                        error_summary=last_error_summary
+                    )
+
+                    self.logger.info(
+                        "[REPAIR] Selected %s context files, estimated context size: %s characters",
+                        len(file_selection.selected_paths),
+                        file_selection.estimated_chars
+                    )
+
+                    for selected_path in file_selection.selected_paths:
+                        reasons = file_selection.reasons_by_path.get(selected_path, [])
+                        reason_text = "; ".join(reasons) if reasons else "no reason recorded"
+
+                        self.logger.info(
+                            "[REPAIR] Context file selected: %s | %s",
+                            selected_path,
+                            reason_text
+                        )
+
+                    source_context = source_context_builder.build(
+                        sandbox_root=sandbox_root,
+                        selected_paths=file_selection.selected_paths,
+                        hidden_test_paths=hidden_test_paths
+                    )
 
                 self.logger.info("[REPAIR] Source context length: %s characters", len(source_context))
 
@@ -342,11 +355,15 @@ class RepairPipeline:
                 repair_json = llm.generate_repair_files(
                     task_prompt=repair_task.prompt,
                     source_context=source_context,
-                    previous_error=last_error_summary
+                    previous_error=last_error_summary,
+                    previous_patch=last_patch_feedback,
+                    strategy_note=strategy_note
                 )
 
                 llm_seconds = time.perf_counter() - llm_start
                 self.logger.info("[TIMING] LLM repair generation took %.3f seconds", llm_seconds)
+
+                strategy_note = None
 
                 before_snapshot = self.diff_tracker.snapshot_production_files(sandbox_root)
 
@@ -394,8 +411,10 @@ class RepairPipeline:
 
                 attempt_seconds = time.perf_counter() - attempt_start
 
-                # got same error again, we are stuck
-                if normalized_error in seen_errors:
+                previous_count = seen_error_counts.get(normalized_error, 0)
+                seen_error_counts[normalized_error] = previous_count + 1
+
+                if previous_count > 0:
                     self.logger.error("[REPAIR] Repeated LLM/write failure detected. Stopping.")
 
                     metrics.add_attempt(
@@ -425,7 +444,6 @@ class RepairPipeline:
                         patch_files=all_patch_files
                     )
 
-                seen_errors.add(normalized_error)
                 last_error_summary = error_summary
 
                 metrics.add_attempt(
@@ -516,9 +534,61 @@ class RepairPipeline:
 
             normalized_error = ErrorExtractor.fingerprint_error(error_summary, error_type)
 
-            # got same error again, we are stuck
-            if normalized_error in seen_errors:
-                self.logger.error("[REPAIR] Repeated Docker/Maven error detected. Stopping.")
+            previous_count = seen_error_counts.get(normalized_error, 0)
+            seen_error_counts[normalized_error] = previous_count + 1
+
+            attempt_patch_text = self.diff_tracker.read_patch_file(attempt_patch_file)
+
+            decision = RepairStrategy.decide_after_maven_failure(
+                error_type=error_type,
+                repeated_count=previous_count,
+                context_already_expanded=normalized_error in expanded_error_fingerprints,
+                has_last_compiling_snapshot=last_compiling_snapshot is not None
+            )
+
+            if decision.should_rollback:
+                self.logger.error("[REPAIR] Repair regression detected. Rolling back to last compiling source snapshot.")
+
+                self.diff_tracker.restore_production_snapshot(
+                    sandbox_root=sandbox_root,
+                    snapshot=last_compiling_snapshot
+                )
+
+                self.logger.info("[REPAIR] Rollback complete.")
+
+            elif RepairStrategy.error_type_means_project_compiled(error_type):
+                last_compiling_snapshot = self.diff_tracker.snapshot_production_files(sandbox_root)
+                self.logger.info("[REPAIR] Failed attempt still compiled. Updated last compiling snapshot.")
+
+            last_error_summary = error_summary
+            last_patch_feedback = attempt_patch_text
+            strategy_note = decision.strategy_note
+
+            if decision.should_expand_context:
+                self.logger.error("[REPAIR] Repeated Maven error detected. Will retry once with expanded context.")
+
+                expanded_error_fingerprints.add(normalized_error)
+                expand_context_next_attempt = True
+
+                metrics.add_attempt(
+                    attempt=attempt,
+                    status="REPAIR_FAILURE_EXPAND_CONTEXT",
+                    llm_seconds=llm_seconds,
+                    workspace_seconds=workspace_seconds,
+                    maven_seconds=maven_seconds,
+                    attempt_seconds=attempt_seconds,
+                    exit_code=result.exit_code,
+                    error_type=error_type,
+                    error_summary=error_summary,
+                    changed_files=attempt_changed_files,
+                    patch_file=attempt_patch_file,
+                    artifact_dir=attempt_artifact_dir
+                )
+
+                continue
+
+            if decision.should_stop:
+                self.logger.error("[REPAIR] Repeated Docker/Maven error detected after expanded context. Stopping.")
 
                 metrics.add_attempt(
                     attempt=attempt,
@@ -546,9 +616,6 @@ class RepairPipeline:
                     changed_files=all_changed_files,
                     patch_files=all_patch_files
                 )
-
-            seen_errors.add(normalized_error)
-            last_error_summary = error_summary
 
             metrics.add_attempt(
                 attempt=attempt,
@@ -609,6 +676,7 @@ class RepairPipeline:
         last_attempt = metrics.attempts[-1] if metrics.attempts else {}
 
         repair_attempts = 0
+
         for attempt in metrics.attempts:
             if attempt["attempt"] > 0:
                 repair_attempts += 1
