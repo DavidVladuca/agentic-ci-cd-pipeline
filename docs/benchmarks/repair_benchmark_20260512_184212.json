@@ -1,0 +1,887 @@
+{
+  "created_at": "2026-05-12T18:42:12",
+  "model": "agent-coder",
+  "max_attempts": 5,
+  "docker_image": "agent-pipeline-java",
+  "timeout_seconds": 30,
+  "total_tasks": 25,
+  "solved_tasks": 22,
+  "failed_tasks": 3,
+  "pass_rate": 0.88,
+  "total_seconds": 1678.24,
+  "average_seconds_per_task": 67.13,
+  "average_repair_attempts": 1.6,
+  "validity": {
+    "total_tasks": 25,
+    "baseline_failures_detected": 25,
+    "baseline_unexpected_successes": 0,
+    "expected_error_type_mismatches": [],
+    "solved_without_changed_files": [],
+    "crashed_tasks": [],
+    "valid_for_basic_repair_claim": true
+  },
+  "by_difficulty": {
+    "easy": {
+      "total_tasks": 7,
+      "solved_tasks": 7,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 260.193
+    },
+    "medium": {
+      "total_tasks": 11,
+      "solved_tasks": 11,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 530.908
+    },
+    "hard": {
+      "total_tasks": 7,
+      "solved_tasks": 4,
+      "failed_tasks": 3,
+      "pass_rate": 0.571,
+      "total_seconds": 887.139
+    }
+  },
+  "by_category": {
+    "wrong-exception-type": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 33.056
+    },
+    "array-edge-case": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 39.903
+    },
+    "stateful-object": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 42.714
+    },
+    "multi-file-domain-logic": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 49.149
+    },
+    "compilation-error": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 28.784
+    },
+    "string-parsing": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 39.264
+    },
+    "two-file-domain-logic": {
+      "total_tasks": 1,
+      "solved_tasks": 0,
+      "failed_tasks": 1,
+      "pass_rate": 0.0,
+      "total_seconds": 195.084
+    },
+    "package-compilation-plus-logic": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 101.436
+    },
+    "parser-state-machine": {
+      "total_tasks": 1,
+      "solved_tasks": 0,
+      "failed_tasks": 1,
+      "pass_rate": 0.0,
+      "total_seconds": 142.279
+    },
+    "exception-contract": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 32.88
+    },
+    "equals-hashcode-contract": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 86.056
+    },
+    "package-based-stateful-logic": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 51.141
+    },
+    "multi-file-boundary-and-arithmetic": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 63.607
+    },
+    "stateful-data-structure": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 51.562
+    },
+    "null-handling": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 67.245
+    },
+    "overloaded-methods": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 43.019
+    },
+    "loop-boundary": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 39.75
+    },
+    "package-import-compilation": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 33.165
+    },
+    "inheritance-override": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 38.156
+    },
+    "multi-file-state-and-time-boundary": {
+      "total_tasks": 1,
+      "solved_tasks": 0,
+      "failed_tasks": 1,
+      "pass_rate": 0.0,
+      "total_seconds": 282.03
+    },
+    "string-indexing": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 36.971
+    },
+    "sorting-comparator": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 40.773
+    },
+    "date-boundary": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 36.86
+    },
+    "mutable-aliasing": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 62.467
+    },
+    "generic-collections": {
+      "total_tasks": 1,
+      "solved_tasks": 1,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 40.889
+    }
+  },
+  "by_baseline_error_type": {
+    "TEST_FAILURE": {
+      "total_tasks": 22,
+      "solved_tasks": 19,
+      "failed_tasks": 3,
+      "pass_rate": 0.864,
+      "total_seconds": 1514.855
+    },
+    "COMPILATION_ERROR": {
+      "total_tasks": 3,
+      "solved_tasks": 3,
+      "failed_tasks": 0,
+      "pass_rate": 1.0,
+      "total_seconds": 163.385
+    }
+  },
+  "tasks": [
+    {
+      "task_name": "age_validator_wrong_exception_type",
+      "task_dir": "bug_tasks/age_validator_wrong_exception_type",
+      "difficulty": "easy",
+      "category": "wrong-exception-type",
+      "description": "AgeValidator throws the wrong exception type for underage input.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 33.056,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_181447_143686.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/age_validator_wrong_exception_type",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/age_validator_wrong_exception_type/final_repair.patch",
+      "changed_files": [
+        "src/main/java/AgeValidator.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/age_validator_wrong_exception_type/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "all_negative_max",
+      "task_dir": "bug_tasks/all_negative_max",
+      "difficulty": "easy",
+      "category": "array-edge-case",
+      "description": "Incorrect max initialization breaks all-negative arrays.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 39.903,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_181527_056005.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/all_negative_max",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/all_negative_max/final_repair.patch",
+      "changed_files": [
+        "src/main/java/App.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/all_negative_max/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "bank_transfer_wrong_direction",
+      "task_dir": "bug_tasks/bank_transfer_wrong_direction",
+      "difficulty": "medium",
+      "category": "stateful-object",
+      "description": "TransferService moves money in the wrong direction between Account objects.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 42.714,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_181609_777434.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/bank_transfer_wrong_direction",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/bank_transfer_wrong_direction/final_repair.patch",
+      "changed_files": [
+        "src/main/java/TransferService.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/bank_transfer_wrong_direction/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "cart_total_ignores_quantity",
+      "task_dir": "bug_tasks/cart_total_ignores_quantity",
+      "difficulty": "medium",
+      "category": "multi-file-domain-logic",
+      "description": "Cart total calculation ignores LineItem quantity.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 49.149,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_181658_935733.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/cart_total_ignores_quantity",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/cart_total_ignores_quantity/final_repair.patch",
+      "changed_files": [
+        "src/main/java/LineItem.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/cart_total_ignores_quantity/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "compile_missing_return",
+      "task_dir": "bug_tasks/compile_missing_return",
+      "difficulty": "medium",
+      "category": "compilation-error",
+      "description": "Missing return path causes Java compilation failure.",
+      "expected_error_type": "COMPILATION_ERROR",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "COMPILATION_ERROR",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 28.784,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_181727_728242.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/compile_missing_return",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/compile_missing_return/final_repair.patch",
+      "changed_files": [
+        "src/main/java/App.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/compile_missing_return/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "config_parser_split_limit",
+      "task_dir": "bug_tasks/config_parser_split_limit",
+      "difficulty": "medium",
+      "category": "string-parsing",
+      "description": "ConfigParser splits on every colon instead of only the first colon.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 39.264,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_181807_000081.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/config_parser_split_limit",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/config_parser_split_limit/final_repair.patch",
+      "changed_files": [
+        "src/main/java/ConfigParser.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/config_parser_split_limit/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "coupon_checkout_two_file",
+      "task_dir": "bug_tasks/coupon_checkout_two_file",
+      "difficulty": "hard",
+      "category": "two-file-domain-logic",
+      "description": "Checkout ignores valid discounts and Coupon treats expiry date incorrectly.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "FAILED_REPEATED_MAVEN_ERROR",
+      "solved": false,
+      "repair_attempts": 5,
+      "total_seconds": 195.084,
+      "final_error_type": "TEST_FAILURE",
+      "summary_file": "logs/run_summary_20260512_182122_091296.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/coupon_checkout_two_file",
+      "final_patch_file": "",
+      "changed_files": [
+        "src/main/java/Coupon.java",
+        "src/main/java/Checkout.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/coupon_checkout_two_file/attempt_1/attempt_1.patch",
+        "artifacts/runs/run_20260512_181414_083488/coupon_checkout_two_file/attempt_2/attempt_2.patch",
+        "artifacts/runs/run_20260512_181414_083488/coupon_checkout_two_file/attempt_3/attempt_3.patch",
+        "artifacts/runs/run_20260512_181414_083488/coupon_checkout_two_file/attempt_4/attempt_4.patch",
+        "artifacts/runs/run_20260512_181414_083488/coupon_checkout_two_file/attempt_5/attempt_5.patch"
+      ]
+    },
+    {
+      "task_name": "coupon_import_and_expiry_combo",
+      "task_dir": "bug_tasks/coupon_import_and_expiry_combo",
+      "difficulty": "hard",
+      "category": "package-compilation-plus-logic",
+      "description": "Project first fails from a wrong package import, then hidden tests expose expiry-date logic.",
+      "expected_error_type": "COMPILATION_ERROR",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "COMPILATION_ERROR",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 2,
+      "total_seconds": 101.436,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_182303_537866.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/coupon_import_and_expiry_combo",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/coupon_import_and_expiry_combo/final_repair.patch",
+      "changed_files": [
+        "src/main/java/billing/InvoiceService.java",
+        "src/main/java/discounts/CouponRule.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/coupon_import_and_expiry_combo/attempt_1/attempt_1.patch",
+        "artifacts/runs/run_20260512_181414_083488/coupon_import_and_expiry_combo/attempt_2/attempt_2.patch"
+      ]
+    },
+    {
+      "task_name": "csv_parser_quoted_fields",
+      "task_dir": "bug_tasks/csv_parser_quoted_fields",
+      "difficulty": "hard",
+      "category": "parser-state-machine",
+      "description": "CsvParser uses simple comma splitting and cannot handle quoted fields or trailing empty fields.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "FAILED_MODEL_STAGNATION",
+      "solved": false,
+      "repair_attempts": 4,
+      "total_seconds": 142.279,
+      "final_error_type": "LLM_ERROR",
+      "summary_file": "logs/run_summary_20260512_182525_825610.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/csv_parser_quoted_fields",
+      "final_patch_file": "",
+      "changed_files": [
+        "src/main/java/CsvParser.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/csv_parser_quoted_fields/attempt_1/attempt_1.patch",
+        "artifacts/runs/run_20260512_181414_083488/csv_parser_quoted_fields/attempt_2/attempt_2.patch",
+        "artifacts/runs/run_20260512_181414_083488/csv_parser_quoted_fields/attempt_3/attempt_3.patch",
+        "artifacts/runs/run_20260512_181414_083488/csv_parser_quoted_fields/attempt_4/attempt_4.patch"
+      ]
+    },
+    {
+      "task_name": "divider_exception_contract",
+      "task_dir": "bug_tasks/divider_exception_contract",
+      "difficulty": "easy",
+      "category": "exception-contract",
+      "description": "Divider violates the API contract by returning 0 instead of throwing on division by zero.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 32.88,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_182558_713554.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/divider_exception_contract",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/divider_exception_contract/final_repair.patch",
+      "changed_files": [
+        "src/main/java/Divider.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/divider_exception_contract/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "email_equals_hashcode_contract",
+      "task_dir": "bug_tasks/email_equals_hashcode_contract",
+      "difficulty": "medium",
+      "category": "equals-hashcode-contract",
+      "description": "EmailAddress equals is case-insensitive but hashCode is case-sensitive.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 2,
+      "total_seconds": 86.056,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_182724_779208.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/email_equals_hashcode_contract",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/email_equals_hashcode_contract/final_repair.patch",
+      "changed_files": [
+        "src/main/java/EmailAddress.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/email_equals_hashcode_contract/attempt_1/attempt_1.patch",
+        "artifacts/runs/run_20260512_181414_083488/email_equals_hashcode_contract/attempt_2/attempt_2.patch"
+      ]
+    },
+    {
+      "task_name": "inventory_reserved_stock_package",
+      "task_dir": "bug_tasks/inventory_reserved_stock_package",
+      "difficulty": "hard",
+      "category": "package-based-stateful-logic",
+      "description": "Package-based Inventory reserve logic rejects exact stock reservations and mishandles invalid quantities.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 51.141,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_182815_927914.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/inventory_reserved_stock_package",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/inventory_reserved_stock_package/final_repair.patch",
+      "changed_files": [
+        "src/main/java/shop/Inventory.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/inventory_reserved_stock_package/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "loan_eligibility_two_file",
+      "task_dir": "bug_tasks/loan_eligibility_two_file",
+      "difficulty": "hard",
+      "category": "multi-file-boundary-and-arithmetic",
+      "description": "Loan approval has both a credit-score boundary bug and an integer-division debt-ratio bug.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 63.607,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_182919_542997.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/loan_eligibility_two_file",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/loan_eligibility_two_file/final_repair.patch",
+      "changed_files": [
+        "src/main/java/DebtRatioCalculator.java",
+        "src/main/java/LoanApplication.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/loan_eligibility_two_file/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "lru_cache_eviction_order",
+      "task_dir": "bug_tasks/lru_cache_eviction_order",
+      "difficulty": "hard",
+      "category": "stateful-data-structure",
+      "description": "LRU cache does not update recency on get and mishandles updates.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 51.562,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_183011_113385.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/lru_cache_eviction_order",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/lru_cache_eviction_order/final_repair.patch",
+      "changed_files": [
+        "src/main/java/LruCache.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/lru_cache_eviction_order/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "null_safe_user_formatter",
+      "task_dir": "bug_tasks/null_safe_user_formatter",
+      "difficulty": "medium",
+      "category": "null-handling",
+      "description": "Formatter does not handle null users, null names, or blank names.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 2,
+      "total_seconds": 67.245,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_183118_368698.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/null_safe_user_formatter",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/null_safe_user_formatter/final_repair.patch",
+      "changed_files": [
+        "src/main/java/UserFormatter.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/null_safe_user_formatter/attempt_1/attempt_1.patch",
+        "artifacts/runs/run_20260512_181414_083488/null_safe_user_formatter/attempt_2/attempt_2.patch"
+      ]
+    },
+    {
+      "task_name": "number_utils_overloaded_clamp",
+      "task_dir": "bug_tasks/number_utils_overloaded_clamp",
+      "difficulty": "medium",
+      "category": "overloaded-methods",
+      "description": "Double clamp overload incorrectly delegates through int clamp and loses decimals.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 43.019,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_183201_397933.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/number_utils_overloaded_clamp",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/number_utils_overloaded_clamp/final_repair.patch",
+      "changed_files": [
+        "src/main/java/NumberUtils.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/number_utils_overloaded_clamp/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "off_by_one_sum",
+      "task_dir": "bug_tasks/off_by_one_sum",
+      "difficulty": "easy",
+      "category": "loop-boundary",
+      "description": "Off-by-one loop bug in summation logic.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 39.75,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_183241_157726.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/off_by_one_sum",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/off_by_one_sum/final_repair.patch",
+      "changed_files": [
+        "src/main/java/App.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/off_by_one_sum/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "package_import_compile_error",
+      "task_dir": "bug_tasks/package_import_compile_error",
+      "difficulty": "medium",
+      "category": "package-import-compilation",
+      "description": "Package-based project has an incorrect import, causing compilation failure.",
+      "expected_error_type": "COMPILATION_ERROR",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "COMPILATION_ERROR",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 33.165,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_183314_331086.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/package_import_compile_error",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/package_import_compile_error/final_repair.patch",
+      "changed_files": [
+        "src/main/java/report/UserReport.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/package_import_compile_error/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "premium_customer_override",
+      "task_dir": "bug_tasks/premium_customer_override",
+      "difficulty": "medium",
+      "category": "inheritance-override",
+      "description": "PremiumCustomer override returns the base customer discount instead of premium discount.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 38.156,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_183352_495181.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/premium_customer_override",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/premium_customer_override/final_repair.patch",
+      "changed_files": [
+        "src/main/java/Customer.java",
+        "src/main/java/PremiumCustomer.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/premium_customer_override/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "reservation_overlap_multi_file",
+      "task_dir": "bug_tasks/reservation_overlap_multi_file",
+      "difficulty": "hard",
+      "category": "multi-file-state-and-time-boundary",
+      "description": "Reservation conflict logic ignores room identity and treats adjacent ranges as overlapping.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "FAILED_MAX_ATTEMPTS",
+      "solved": false,
+      "repair_attempts": 5,
+      "total_seconds": 282.03,
+      "final_error_type": "LLM_ERROR",
+      "summary_file": "logs/run_summary_20260512_183834_534715.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/reservation_overlap_multi_file",
+      "final_patch_file": "",
+      "changed_files": [
+        "src/main/java/TimeRange.java",
+        "src/main/java/ReservationBook.java",
+        "src/main/java/Reservation.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/reservation_overlap_multi_file/attempt_1/attempt_1.patch",
+        "artifacts/runs/run_20260512_181414_083488/reservation_overlap_multi_file/attempt_2/attempt_2.patch",
+        "artifacts/runs/run_20260512_181414_083488/reservation_overlap_multi_file/attempt_3/attempt_3.patch",
+        "artifacts/runs/run_20260512_181414_083488/reservation_overlap_multi_file/attempt_4/attempt_4.patch",
+        "artifacts/runs/run_20260512_181414_083488/reservation_overlap_multi_file/attempt_5/attempt_5.patch"
+      ]
+    },
+    {
+      "task_name": "reverse_string_missing_first_char",
+      "task_dir": "bug_tasks/reverse_string_missing_first_char",
+      "difficulty": "easy",
+      "category": "string-indexing",
+      "description": "Reverse loop skips the first character because of an incorrect boundary.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 36.971,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_183911_512657.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/reverse_string_missing_first_char",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/reverse_string_missing_first_char/final_repair.patch",
+      "changed_files": [
+        "src/main/java/App.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/reverse_string_missing_first_char/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "score_sorter_descending",
+      "task_dir": "bug_tasks/score_sorter_descending",
+      "difficulty": "easy",
+      "category": "sorting-comparator",
+      "description": "ScoreSorter returns the lowest scores first instead of highest scores first.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 40.773,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_183952_294237.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/score_sorter_descending",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/score_sorter_descending/final_repair.patch",
+      "changed_files": [
+        "src/main/java/ScoreSorter.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/score_sorter_descending/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "subscription_date_boundary",
+      "task_dir": "bug_tasks/subscription_date_boundary",
+      "difficulty": "easy",
+      "category": "date-boundary",
+      "description": "Subscription expiry date is incorrectly treated as exclusive.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 36.86,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_184029_160266.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/subscription_date_boundary",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/subscription_date_boundary/final_repair.patch",
+      "changed_files": [
+        "src/main/java/Subscription.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/subscription_date_boundary/attempt_1/attempt_1.patch"
+      ]
+    },
+    {
+      "task_name": "team_mutable_aliasing",
+      "task_dir": "bug_tasks/team_mutable_aliasing",
+      "difficulty": "medium",
+      "category": "mutable-aliasing",
+      "description": "Team stores and exposes a mutable list alias.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 2,
+      "total_seconds": 62.467,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_184131_636577.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/team_mutable_aliasing",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/team_mutable_aliasing/final_repair.patch",
+      "changed_files": [
+        "src/main/java/Team.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/team_mutable_aliasing/attempt_1/attempt_1.patch",
+        "artifacts/runs/run_20260512_181414_083488/team_mutable_aliasing/attempt_2/attempt_2.patch"
+      ]
+    },
+    {
+      "task_name": "word_counter_missing_key",
+      "task_dir": "bug_tasks/word_counter_missing_key",
+      "difficulty": "medium",
+      "category": "generic-collections",
+      "description": "WordCounter increments missing map entries without initializing them.",
+      "expected_error_type": "TEST_FAILURE",
+      "baseline_status": "BASELINE_FAILURE_DETECTED",
+      "baseline_error_type": "TEST_FAILURE",
+      "final_status": "REPAIR_SUCCESS",
+      "solved": true,
+      "repair_attempts": 1,
+      "total_seconds": 40.889,
+      "final_error_type": null,
+      "summary_file": "logs/run_summary_20260512_184212_533539.json",
+      "log_file": "logs/agent_run_20260512_181414.log",
+      "artifact_dir": "artifacts/runs/run_20260512_181414_083488/word_counter_missing_key",
+      "final_patch_file": "artifacts/runs/run_20260512_181414_083488/word_counter_missing_key/final_repair.patch",
+      "changed_files": [
+        "src/main/java/WordCounter.java"
+      ],
+      "patch_files": [
+        "artifacts/runs/run_20260512_181414_083488/word_counter_missing_key/attempt_1/attempt_1.patch"
+      ]
+    }
+  ]
+}

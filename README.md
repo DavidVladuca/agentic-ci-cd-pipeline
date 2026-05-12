@@ -1,4 +1,4 @@
-# Java Repair Agent
+# Local Java Repair Agent
 
 A local autonomous Java repair agent that explores what happens when an LLM is placed inside a real software-engineering feedback loop.
 
@@ -432,26 +432,15 @@ Latest benchmark:
 | Hard | 4 | 7 | 57% |
 | **Total** | **22** | **25** | **88%** |
 
-Benchmark coverage includes:
+A full benchmark snapshot is included in:
 
-- compilation errors,
-- loop and boundary bugs,
-- string parsing bugs,
-- null handling,
-- exception contracts,
-- generic collections,
-- equals/hashCode contracts,
-- sorting comparators,
-- overloaded methods,
-- inheritance overrides,
-- date boundaries,
-- mutable aliasing,
-- stateful objects,
-- package/import bugs,
-- multi-file domain logic,
-- parser state machines.
+```text
+docs/benchmarks/
+```
 
-The three failed tasks are hard cases involving parser state machines, subtle multi-file domain logic, and model stagnation. These are kept in the benchmark because they make the result more honest and useful.
+Benchmark coverage includes compilation errors, loop and boundary bugs, string parsing, null handling, exception contracts, generic collections, equals/hashCode contracts, sorting comparators, overloaded methods, inheritance overrides, date boundaries, mutable aliasing, stateful objects, package/import bugs, multi-file domain logic, and parser state machines.
+
+The three failed tasks are hard cases involving parser state machines, subtle multi-file domain logic, and model stagnation. They are intentionally kept in the benchmark because they make the result more honest and useful.
 
 ---
 
@@ -459,7 +448,7 @@ The three failed tasks are hard cases involving parser state machines, subtle mu
 
 Each run writes evidence to disk.
 
-### Logs
+### Runtime logs
 
 ```text
 logs/
@@ -476,6 +465,14 @@ reports/
     repair_report_*.md
 ```
 
+A curated benchmark snapshot can be found in:
+
+```text
+docs/benchmarks/
+```
+
+The raw `reports/`, `logs/`, and `artifacts/` folders are generated at runtime and are usually ignored by Git. The `docs/benchmarks/` folder contains selected benchmark outputs committed for review.
+
 ### Patch artifacts
 
 ```text
@@ -489,7 +486,7 @@ artifacts/runs/<run-id>/<task-name>/
     final_repair.patch
 ```
 
-This makes each benchmark result auditable: the report points to the exact source changes produced by the agent.
+This makes each benchmark result auditable: the report shows what task ran, whether it passed, which files changed, and where the corresponding patch artifacts were written.
 
 ---
 
