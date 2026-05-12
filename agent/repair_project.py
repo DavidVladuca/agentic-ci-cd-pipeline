@@ -19,7 +19,7 @@ def parse_args(argv=None):
     )
 
     input_group = parser.add_mutually_exclusive_group(required=True)
-
+ 
     input_group.add_argument(
         "--project-dir",
         default=None,

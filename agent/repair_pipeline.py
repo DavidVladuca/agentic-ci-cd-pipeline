@@ -40,8 +40,9 @@ class RepairRunResult:
     patch_files: list[str]
 
 
+# runs one full LLM repair loop for a single task
+# includes sandboxing, baseline testing and iterative patch attempts
 class RepairPipeline:
-    """Runs one full LLM-guided repair loop for a single Java Maven task, including sandboxing, baseline testing, and iterative patch attempts."""
     def __init__(
         self,
         project_root,
@@ -66,11 +67,13 @@ class RepairPipeline:
         self.maven_repo_host_dir = Path(maven_repo_host_dir).resolve() if maven_repo_host_dir else None
         self.dependency_timeout_seconds = dependency_timeout_seconds
         self.diff_tracker = DiffTracker(self.project_root)
-
+    
+    # loads a task folder, then runs it through the main repair pipeline
     def run_task(self, task_dir):
         repair_task = RepairTask.load(task_dir)
         return self.run_repair_task(repair_task)
 
+    # runs the complete repair process for one already loaded RepairTask
     def run_repair_task(self, repair_task):
         metrics = RunMetrics(
             task_prompt=repair_task.prompt,
@@ -107,6 +110,7 @@ class RepairPipeline:
 
         maven_repo_host_dir = self.maven_repo_host_dir
 
+        # optionally download Maven dependencies before offline repair attempts
         if self.prepare_dependencies:
             if maven_repo_host_dir is None:
                 maven_repo_host_dir = (
@@ -191,6 +195,7 @@ class RepairPipeline:
         self.logger.info("[REPAIR] Running baseline Maven/JUnit tests inside Docker...")
         baseline_result = runner.run_tests()
 
+        # if the broken project already passes, the repair task is invalid
         if baseline_result.success:
             baseline_status = "BASELINE_UNEXPECTED_SUCCESS"
             baseline_error_type = None
@@ -259,6 +264,7 @@ class RepairPipeline:
             error_summary=baseline_error_summary
         )
 
+        # stop if the baseline failure is infrastructure related, not code related
         if RepairStrategy.is_infrastructure_error(baseline_error_type):
             self.logger.error("[REPAIR] Baseline failed because of infrastructure, not project code. Stopping before LLM repair.")
 
@@ -285,12 +291,14 @@ class RepairPipeline:
 
         last_compiling_snapshot = None
 
+        # save a rollback point if the baseline compiled but failed tests
         if RepairStrategy.error_type_means_project_compiled(baseline_error_type):
             last_compiling_snapshot = self.diff_tracker.snapshot_production_files(sandbox_root)
             self.logger.info("[REPAIR] Baseline produced a compiling source state. Snapshot saved.")
         else:
             self.logger.info("[REPAIR] Baseline did not produce a known compiling source state.")
 
+        # main retry loop: generate patch, apply it, test it, then decide what to do next
         for attempt in range(1, self.max_attempts + 1):
             attempt_start = time.perf_counter()
 
@@ -429,10 +437,10 @@ class RepairPipeline:
                         else error_summary
                     )
 
-                    # Keep the last real diff. Do not feed the sentinel as the previous patch.
+                    # keep the last real diff
                     last_patch_feedback = last_meaningful_patch_feedback
 
-                    # A no-change output means the model is stuck. Give it broader context next.
+                    # a NO CHANGE output means the model is stuck => broader context needed
                     expand_context_next_attempt = True
 
                     attempt_seconds = time.perf_counter() - attempt_start
@@ -472,7 +480,6 @@ class RepairPipeline:
 
                     continue
 
-                # This was a real textual patch. Preserve it for future feedback.
                 last_meaningful_patch_feedback = attempt_patch_text
                 consecutive_no_change_count = 0
 
@@ -495,7 +502,6 @@ class RepairPipeline:
 
                 last_error_summary = error_summary
 
-                # Preserve the last real diff if one exists. Do not erase useful feedback.
                 last_patch_feedback = last_meaningful_patch_feedback
 
                 strategy_note = (
@@ -651,6 +657,7 @@ class RepairPipeline:
 
                 self.logger.info("[REPAIR] Rollback complete.")
 
+            # if the failed patch still compiled, use it as the new rollback point
             elif RepairStrategy.error_type_means_project_compiled(error_type):
                 last_compiling_snapshot = self.diff_tracker.snapshot_production_files(sandbox_root)
                 self.logger.info("[REPAIR] Failed attempt still compiled. Updated last compiling snapshot.")

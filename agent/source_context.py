@@ -58,8 +58,8 @@ class SourceContextBuilder:
             sections.append(section)
             total_chars += section_cost
 
-        # If the selected file is larger than the budget, include it anyway.
-        # Truncating Java source can make the model return broken full-file rewrites.
+        # if the file is bigger than the budget, include it anyway
+        # truncating the file can make the model return broken results
         if not sections:
             file_path = files[0]
             relative_path = file_path.relative_to(sandbox_root).as_posix()
@@ -146,7 +146,7 @@ class SourceContextBuilder:
             if relative_path in hidden_test_paths:
                 continue
 
-            # Legacy safety fallback.
+            # just to be sure V1 still works
             if "hidden" in path.name.lower():
                 continue
 

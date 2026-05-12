@@ -12,18 +12,20 @@ class FileSelection:
     candidate_scores: dict[str, int] = field(default_factory=dict)
 
 
-# selects the smallest useful set of Java files to send to the LLM
+# selects the smallest number of Java files to send to the LLM
 class FileSelector:
     def __init__(self, max_context_chars=12000):
         self.max_context_chars = max_context_chars
-
+    
+    # every scoring method adds points to files
+    # The files with the highest total score are selected
     def select(self, analysis, task_prompt, error_summary):
         haystack = f"{task_prompt or ''}\n{error_summary or ''}"
         normalized_haystack = haystack.replace("\\", "/")
         lowered_haystack = normalized_haystack.lower()
 
-        scores = defaultdict(int)
-        reasons = defaultdict(list)
+        scores = defaultdict(int) # initialise with 0 if nothing
+        reasons = defaultdict(list) # initialise with [] if nothing
 
         self.score_direct_file_mentions(
             analysis=analysis,
@@ -168,7 +170,7 @@ class FileSelector:
             for class_name in production_file.class_names:
                 production_classes[class_name] = production_file
 
-        # First, selected public tests can pull in production classes they reference.
+        # if a selected test uses a production class, also select that production file
         for test_file in analysis.public_test_files:
             if scores.get(test_file.relative_path, 0) <= 0:
                 continue
@@ -189,12 +191,13 @@ class FileSelector:
                     f"referenced by selected test file {test_file.relative_path}"
                 )
 
-        # Second, selected production files can pull in nearby production collaborators.
+         # collect files that already have a positive score
         scored_paths = {
             path for path, score in scores.items()
             if score > 0
         }
 
+        # if a selected production file uses another production class, also consider that file
         for file_info in analysis.production_files:
             if file_info.relative_path not in scored_paths:
                 continue
@@ -218,6 +221,7 @@ class FileSelector:
                     f"referenced by selected production file {file_info.relative_path}"
                 )
 
+    # this gives points when the task mentions a method name
     def score_task_prompt_methods(self, analysis, task_prompt, scores, reasons):
         lowered_prompt = task_prompt.lower()
 
@@ -269,8 +273,7 @@ class FileSelector:
             selected_paths.append(file_info.relative_path)
             estimated_chars += file_cost
 
-        # If the highest-ranked file is huge, include it anyway.
-        # A partial Java file is usually worse than a large complete Java file.
+        # include file if over budget anyways
         if not selected_paths and scored_files:
             selected_paths.append(scored_files[0].relative_path)
 
@@ -317,7 +320,7 @@ class FileSelector:
         if re.search(rf"\b{re.escape(symbol)}\b", normalized_haystack):
             return True
 
-        # Important for hidden test names like TransferServiceHiddenTest.
+        # important for hidden test names like "TransferServiceHiddenTest"!!!
         if symbol.lower() in lowered_haystack:
             return True
 
@@ -328,7 +331,7 @@ class FileSelector:
 
         for path in selected_paths:
             file_info = analysis.by_path.get(path)
-
+ 
             if file_info is None:
                 continue
 

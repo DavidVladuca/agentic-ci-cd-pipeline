@@ -15,7 +15,7 @@ class ProjectImportResult:
     import_root: Path | None
     project_dir: Path
     run_name: str
-
+ 
 
 # imports local folders, zip files, or GitHub repos into a safe local Maven project directory
 class ProjectImporter:
@@ -203,6 +203,7 @@ class ProjectImporter:
                     with target_path.open("wb") as target_file:
                         shutil.copyfileobj(source_file, target_file)
 
+    # checks if the file path inside the zip file is safe to extract
     def safe_zip_member_path(self, zip_info):
         raw_name = zip_info.filename.replace("\\", "/").strip()
 
@@ -323,6 +324,8 @@ class ProjectImporter:
         return self.safe_name(repo_name)
 
     @staticmethod
+    # checks whether a zip entry is a symbolic link (we use the stat library)
+    # symlinks are unsafe to extract because they can point outside the project
     def is_zip_symlink(zip_info):
         file_type = (zip_info.external_attr >> 16) & 0o170000
         return file_type == stat.S_IFLNK

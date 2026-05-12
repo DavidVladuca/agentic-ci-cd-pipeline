@@ -15,7 +15,7 @@ class TaskMetadata:
     def load(task_dir):
         task_dir = Path(task_dir)
         metadata_file = task_dir / "task.json"
-
+ 
         if not metadata_file.exists():
             return TaskMetadata()
 

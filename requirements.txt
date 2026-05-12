@@ -1,9 +1,3 @@
-# Python 3.10 or higher is required.
-# No third-party Python packages are required. All agent code uses the standard library only.
-#
-# External runtime dependencies (must be installed and running separately):
-#   - Docker:  https://docs.docker.com/get-docker/
-#             Build the sandbox image: docker build -t agent-pipeline-java .
-#   - Ollama:  https://ollama.com/download
-#             Must be running locally on http://localhost:11434
-#             Load the model: ollama create agent-coder -f Modelfile
+# Python 3.10+ required.
+# No third-party Python packages are required.
+# The agent uses only the Python standard library.

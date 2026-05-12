@@ -96,7 +96,7 @@ class ProjectRepairWorkflow:
             }
         )
 
-        return ProjectRepairWorkflowResult(
+        return ProjectRepairWorkflowResult( 
             import_result=import_result,
             repair_result=repair_result,
             markdown_report=markdown_report

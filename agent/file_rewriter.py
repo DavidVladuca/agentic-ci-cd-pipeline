@@ -1,9 +1,8 @@
 from pathlib import Path
 
 
+# applies LLM file edits to the sandbox 
 class FileRewriter:
-    """Applies LLM-generated file edits to the sandbox with path validation and atomic write-then-restore semantics."""
-
     def __init__(self, sandbox_root):
         self.sandbox_root = Path(sandbox_root).resolve()
         self.production_root = self.sandbox_root / "src" / "main" / "java"

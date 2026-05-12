@@ -22,4 +22,4 @@ class WorkspaceManager:
         path.mkdir(parents=True, exist_ok=True)
 
     def write_file(self, path, content):
-        path.write_text(content, encoding="utf-8")
+        path.write_text(content, encoding="utf-8")   

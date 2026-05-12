@@ -11,12 +11,13 @@ from agent.config import (
 )
 from agent.doctor import Doctor
 
-
+# commandline parser, which supports certain subcommands
 def build_parser():
     parser = argparse.ArgumentParser(
         description="Local Docker-sandboxed Java repair agent."
     )
 
+    # at least a command
     subparsers = parser.add_subparsers(
         dest="command",
         required=True
@@ -176,6 +177,8 @@ def add_repair_project_parser(subparsers):
     parser.set_defaults(handler=handle_repair_project)
 
 
+# from here we handle each of the commands
+
 def handle_doctor(args):
     project_root = find_project_root()
 
@@ -193,6 +196,7 @@ def handle_doctor(args):
     print(f"Project root: {project_root}")
     print("")
 
+    # track if a check failed
     failed_required = False
 
     for check in checks:
@@ -284,7 +288,7 @@ def find_project_root():
 
     return project_root
 
-
+# main CLI entrypoint
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -300,6 +304,7 @@ def main(argv=None):
 
     return args.handler(args)
 
-
+# now we execute with : python -m agent.cli_main ...
+# start the CLI and use main()'s return value as the process exit code
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))

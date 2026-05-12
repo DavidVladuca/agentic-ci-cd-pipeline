@@ -11,10 +11,10 @@ class RepairTask:
     prompt: str
     project_dir: Path
     hidden_tests_dir: Path | None
-    metadata: TaskMetadata
+    metadata: TaskMetadata  
 
     @staticmethod
-    def load(task_dir):
+    def load(task_dir): 
         task_dir = Path(task_dir).resolve()
 
         if not task_dir.exists():

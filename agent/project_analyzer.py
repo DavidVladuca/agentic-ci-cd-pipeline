@@ -27,7 +27,7 @@ class ProjectAnalysis:
     hidden_test_paths: set[str]
 
 
-# scans a sandboxed Maven project and extracts cheap metadata for file selection
+# scans a sandboxed Maven project and extracts metadata for file selection
 class ProjectAnalyzer:
     CLASS_PATTERN = re.compile(
         r"\b(?:public\s+|protected\s+|private\s+|abstract\s+|final\s+|static\s+)*"
@@ -159,8 +159,7 @@ class ProjectAnalyzer:
             if relative_path in hidden_test_paths:
                 continue
 
-            # Legacy safety fallback.
-            # Hidden test origin tracking is now the main mechanism.
+            # just to be sure V1 still works
             if "hidden" in path.name.lower():
                 continue
 

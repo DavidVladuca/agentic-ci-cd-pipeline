@@ -5,7 +5,7 @@ from agent.repair_cli import parse_repair_cli_args
 from agent.repair_pipeline import RepairPipeline
 
 
-# This is the V2 single task repair controller
+# this is the V2 single task repair controller
 # RepairPipeline does the actual repair loop!!!
 def main(argv=None):
     args = parse_repair_cli_args(argv)

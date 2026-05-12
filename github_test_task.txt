@@ -1,1 +1,0 @@
-Smoke test GitHub project import. No real repair expected.

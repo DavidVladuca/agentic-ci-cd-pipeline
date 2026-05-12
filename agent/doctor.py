@@ -14,7 +14,8 @@ class DoctorCheck:
     detail: str
     required: bool = True
 
-
+# checks if the repair_agent environment is ready
+# verifies project files, Docker, Docker image, Ollama and the selected model
 class Doctor:
     def __init__(
         self,

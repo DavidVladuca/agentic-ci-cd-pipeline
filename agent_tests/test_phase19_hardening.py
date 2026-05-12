@@ -9,7 +9,8 @@ from agent.project_analyzer import ProjectAnalyzer
 from agent.project_sandbox import ProjectSandbox
 from agent.source_context import SourceContextBuilder
 
-
+# tests Phase 19 hardening rules
+# checks safe file rewriting, hidden-test exclusion, sandbox tracking and timeout reporting
 class Phase19HardeningTests(unittest.TestCase):
     def write_file(self, root, relative_path, content):
         path = Path(root) / relative_path

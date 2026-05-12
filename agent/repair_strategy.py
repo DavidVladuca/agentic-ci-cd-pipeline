@@ -8,9 +8,9 @@ class RepairDecision:
     should_stop: bool
     strategy_note: str | None
 
-
+# decides how the repair loop should react to different types of failures
+# handles rollback, repeated errors, expanded context and stopping conditions
 class RepairStrategy:
-    """Encodes decision logic for when to rollback, expand context, or stop a repair attempt based on error type and repeat count."""
 
     COMPILED_ERROR_TYPES = {
         "TEST_FAILURE"
@@ -122,8 +122,7 @@ class RepairStrategy:
 
         strategy_note = " ".join(notes) if notes else None
 
-        # First time seeing this exact error: do not panic.
-        # Let the normal loop continue with selected context.
+        # first time seeing this error -> continue
         if repeated_count <= 0:
             return RepairDecision(
                 should_rollback=should_rollback,
@@ -132,7 +131,7 @@ class RepairStrategy:
                 strategy_note=strategy_note
             )
 
-        # First repeat: expand context once.
+        # first repeat -> send context
         if not context_already_expanded:
             expansion_note = (
                 "The next attempt will use expanded project context. "
@@ -152,8 +151,8 @@ class RepairStrategy:
                 strategy_note=strategy_note
             )
 
-        # After expanded context, do not stop immediately.
-        # Hard tasks often need one or two more attempts after the model has seen the full local design.
+        # after the explained context, do not stop instantly
+        # hard tasks seem to need one or two more attempts after the model has seen the full local design
         if repeated_count < 3:
             post_expansion_note = (
                 "The same error still repeats after expanded context. "
@@ -174,7 +173,7 @@ class RepairStrategy:
                 strategy_note=strategy_note
             )
 
-        # Only stop after several repeats, not immediately after the first expanded-context failure.
+        # only stop after several repeats
         stop_note = (
             "The same Maven/JUnit error repeated multiple times even after expanded context. "
             "Stopping to avoid wasting repair attempts."

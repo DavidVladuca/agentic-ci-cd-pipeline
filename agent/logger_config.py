@@ -15,7 +15,7 @@ def setup_logger(project_root):
     logger.handlers.clear()
 
     formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)s | %(message)s"
+        "%(asctime)s | %(levelname)s | %(message)s" 
     )
 
     # write logs to a file

@@ -2,8 +2,8 @@ import json
 import urllib.request
 import urllib.error
 
+# handles all Ollama API communication, prompt construction, JSON parsing and repair output validation
 class LLMClient:
-    """Handles all Ollama API communication, prompt construction, JSON parsing, and repair output validation."""
     def __init__(
         self,
         model="agent-coder",
@@ -383,7 +383,7 @@ class LLMClient:
     def validate_repair_file_content(self, path, content):
         stripped = content.strip()
 
-        # Catches truncated LLM outputs where the model stopped mid-file before the final closing brace.
+        # catches truncated LLM outputs 
         if not stripped.endswith("}"):
             raise RuntimeError(
                 f"Repair file content appears incomplete for path: {path}. "

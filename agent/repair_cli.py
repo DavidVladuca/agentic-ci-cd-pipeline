@@ -8,7 +8,7 @@ from agent.config import (
 )
 
 
-# parses command-line arguments for repair-task mode
+# parses commandline arguments for repair_task mode
 def parse_repair_cli_args(argv=None):
     parser = argparse.ArgumentParser(
         description="Run a broken Java repair task inside the Docker sandbox."

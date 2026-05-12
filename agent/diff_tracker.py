@@ -42,7 +42,7 @@ class DiffTracker:
 
         return snapshot
 
-    # write before/after files and a unified diff patch for one repair attempt
+    # write before/after files and unified diff patch for one repair attempt
     def write_attempt_artifacts(self, task_name, attempt, sandbox_root, before_snapshot, changed_files):
         sandbox_root = Path(sandbox_root)
 
@@ -157,7 +157,7 @@ class DiffTracker:
         target_path.parent.mkdir(parents=True, exist_ok=True)
         target_path.write_text(content, encoding="utf-8")
     
-    # restore src/main/java from a production-file snapshot
+    # restore src/main/java from snapshot
     def restore_production_snapshot(self, sandbox_root, snapshot):
         sandbox_root = Path(sandbox_root)
         production_root = sandbox_root / "src" / "main" / "java"

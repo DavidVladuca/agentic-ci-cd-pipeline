@@ -14,7 +14,7 @@ Create a JUnit 5 test class AppTest that verifies the add method.
 @dataclass
 class AgentConfig:
     # added type checks and defaults
-    task_prompt: str = DEFAULT_TASK_PROMPT
+    task_prompt: str = DEFAULT_TASK_PROMPT 
     model: str = DEFAULT_MODEL
     max_attempts: int = DEFAULT_MAX_ATTEMPTS
     docker_image: str = DEFAULT_DOCKER_IMAGE

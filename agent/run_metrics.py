@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 import time
 
-# collects run metrics, and writes a summary at the end
+# collects run metrics and writes a summary at the end
 class RunMetrics:
     def __init__(self, task_prompt, max_attempts):
         self.task_prompt = task_prompt

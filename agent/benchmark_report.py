@@ -4,7 +4,8 @@ import csv
 import json
 
 
-# writes aggregate benchmark reports for all repair tasks
+# writes benchmark results to JSON, CSV and Markdown reports
+# also computes summary statistics and validity checks
 class BenchmarkReportWriter:
     def __init__(self, project_root):
         self.project_root = Path(project_root).resolve()
@@ -125,6 +126,7 @@ class BenchmarkReportWriter:
             )
         }
 
+    # converts one repair result object into a dictionary for reports
     def task_to_dict(self, result):
         return {
             "task_name": result.task_name,
@@ -259,6 +261,7 @@ class BenchmarkReportWriter:
             encoding="utf-8"
         )
     
+    # adds benchmark validity checks to the Markdown report
     def append_validity_section(self, lines, data):
         validity = data["validity"]
 
@@ -486,6 +489,7 @@ class BenchmarkReportWriter:
         )
 
     @staticmethod
+    # safely formats a value for use inside a Markdown table cell
     def md_cell(value):
         if value is None:
             return "-"
@@ -501,6 +505,7 @@ class BenchmarkReportWriter:
         return text
 
     @staticmethod
+    # replaces backticks so inline Markdown code formatting does not break
     def escape_backticks(value):
         return str(value).replace("`", "'")
 
@@ -513,4 +518,4 @@ class BenchmarkReportWriter:
         if count == 0:
             return 0.0
 
-        return round(total / count, 3)
+        return round(total / count, 3) 

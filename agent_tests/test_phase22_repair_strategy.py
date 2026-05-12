@@ -5,7 +5,8 @@ from pathlib import Path
 from agent.diff_tracker import DiffTracker
 from agent.repair_strategy import RepairStrategy
 
-
+# unit tests for Phase 22 repair strategy behavior
+# checks rollback decisions, repeated-error handling, context expansion and snapshot restore
 class Phase22RepairStrategyTests(unittest.TestCase):
     def write_file(self, root, relative_path, content):
         path = Path(root) / relative_path
@@ -46,9 +47,6 @@ class Phase22RepairStrategyTests(unittest.TestCase):
         self.assertTrue(decision.should_expand_context)
 
     def test_repeated_error_after_expansion_continues_briefly(self):
-        # After context expansion, the strategy gives the model a few more attempts
-        # (repeated_count < 3) before stopping. Stopping immediately was the Phase 22
-        # behavior; Phase 23 extended this to reduce premature failures on hard tasks.
         decision = RepairStrategy.decide_after_maven_failure(
             error_type="TEST_FAILURE",
             repeated_count=1,

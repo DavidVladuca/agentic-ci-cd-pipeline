@@ -49,7 +49,7 @@ class ErrorExtractor:
 
         return prefix + summary
 
-    @staticmethod
+    @staticmethod 
     def normalize_error(error_summary):
         normalized = error_summary.lower()
         normalized = " ".join(normalized.split())

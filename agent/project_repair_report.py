@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import datetime
 
 
-# writes a human-readable Markdown report for one project repair run
+# writes a Markdown report for one project repair run
 class ProjectRepairReportWriter:
     def __init__(self, project_root):
         self.project_root = Path(project_root).resolve()

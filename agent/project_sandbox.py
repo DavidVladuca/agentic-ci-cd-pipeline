@@ -79,7 +79,7 @@ class ProjectSandbox:
                 target_path.mkdir(parents=True, exist_ok=True)
                 continue
 
-            if target_path.exists():
+            if target_path.exists(): 
                 raise RuntimeError(
                     "Hidden test injection would overwrite an existing project file: "
                     f"{target_path.relative_to(target_dir).as_posix()}"

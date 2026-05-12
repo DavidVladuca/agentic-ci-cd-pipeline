@@ -23,4 +23,4 @@ class SandboxManager:
 
         shutil.copy2(source_pom, target_pom)
 
-        return self.sandbox_root
+        return self.sandbox_root 

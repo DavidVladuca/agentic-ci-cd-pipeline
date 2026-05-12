@@ -10,8 +10,7 @@ from agent.config import (
     DEFAULT_DOCKER_TIMEOUT_SECONDS
 )
 
-
-# parses command-line arguments and turns them into an AgentConfig
+# parse commandline arguments into AgentConfig
 def parse_cli_args(argv=None):
     parser = argparse.ArgumentParser(
         description="Run the local Docker-sandboxed Java coding agent."
@@ -61,6 +60,7 @@ def parse_cli_args(argv=None):
 
     args = parser.parse_args(argv)
 
+    # validate arguments
     if args.max_attempts < 1:
         parser.error("--max-attempts must be at least 1")
 

@@ -12,7 +12,7 @@ from agent.logger_config import setup_logger
 from agent.repair_pipeline import RepairPipeline, RepairRunResult
 
 
-# parses commandline arguments for benchmark mode
+# parses commandline arguments for benchmark mode 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description="Run the Java repair agent across a suite of repair tasks."

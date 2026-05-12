@@ -10,9 +10,10 @@ from agent.logger_config import setup_logger
 from agent.run_metrics import RunMetrics
 from agent.sandbox_manager import SandboxManager
 
-# This is the controller
+# this is for V1!!!
+# this is the controller
 # LLMClient → SandboxManager → WorkspaceManager → DockerRunner → ErrorExtractor → Logger → RunMetrics
-# At this stage : it runs a configurable retry feedback loop with logging, metrics and Docker sandboxing
+# at this stage : it runs a configurable retry feedback loop with logging, metrics and Docker sandboxing
 def main(argv=None):
     config = parse_cli_args(argv)
 

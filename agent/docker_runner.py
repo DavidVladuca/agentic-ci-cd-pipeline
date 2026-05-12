@@ -19,10 +19,9 @@ class DockerResult:
     def combined_output(self):
         return (self.stdout or "") + "\n" + (self.stderr or "")
 
-
+# executes Maven and JUnit builds inside sandbox
+# has strict resource and network constraints!!!
 class DockerRunner:
-    """Executes Maven/JUnit builds inside a sandboxed Docker container with strict resource and network constraints."""
-
     def __init__(
         self,
         sandbox_root,
