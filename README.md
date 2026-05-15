@@ -6,6 +6,11 @@ Instead of asking a model to simply generate code, this project builds the surro
 
 The goal was to understand agentic software engineering from the inside. I wanted to build the control loop myself: how the agent selects context, how it constrains the model, how it tests a patch, how it detects failure, and how it records evidence for every repair attempt.
 
+> **Project evolution:**  
+> This repository contains two stages of the project.  
+> **V1** was a CI/CD-style local code-generation prototype: the model generated Java source and tests, Maven validated the result, and build/test failures were fed back into the next attempt.  
+> **V2 is the main version of this project:** a Docker-sandboxed Java program-repair agent that works on existing Maven projects, applies patch-based fixes to production files, validates repairs against public and hidden JUnit tests, tracks regressions, and produces benchmark reports plus auditable patch artifacts.
+
 ---
 
 ## Table of Contents
